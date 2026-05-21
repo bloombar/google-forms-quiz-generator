@@ -1,0 +1,38 @@
+version: 1
+title: Sample Quiz
+description: Edit this file and upload it to Google Forms.
+isQuiz: true
+questions:
+  - title: What is 2 + 2?
+    type: single_choice
+    required: true
+    points: 1
+    options:
+      - value: '3'
+      - value: '4'
+        isCorrect: true
+      - value: '5'
+  - title: Select all prime numbers.
+    type: multiple_choice
+    points: 2
+    options:
+      - value: '2'
+        isCorrect: true
+      - value: '3'
+        isCorrect: true
+      - value: '4'
+      - value: '5'
+        isCorrect: true
+  - title: Which language runs in the browser?
+    type: dropdown
+    options:
+      - value: Java
+      - value: TypeScript
+        isCorrect: true
+      - value: C
+  - title: 'One-word answer: largest ocean on Earth.'
+    type: short_text
+    correctAnswers:
+      - Pacific
+  - title: Describe your favorite learning strategy.
+    type: long_text

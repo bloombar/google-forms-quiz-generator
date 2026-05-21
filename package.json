@@ -1,0 +1,39 @@
+{
+  "name": "google-forms-quiz-tool",
+  "version": "1.0.0",
+  "description": "CLI tool to round-trip Google Forms quizzes to and from a simple text format.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "quiz-tool": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "lint": "eslint .",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "google-forms",
+    "quiz",
+    "cli",
+    "yaml"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "dotenv": "^16.6.1",
+    "google-auth-library": "^9.15.1",
+    "googleapis": "^140.0.1",
+    "js-yaml": "^4.1.0",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.16.0",
+    "@types/yargs": "^17.0.33",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3",
+    "tsx": "^4.19.4"
+  }
+}
