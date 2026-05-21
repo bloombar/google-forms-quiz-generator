@@ -3,4 +3,5 @@ dist/
 .env
 credentials.json
 tokens/
+.deployments/
 *.log

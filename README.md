@@ -47,6 +47,9 @@ npm run dev -- init-template --output quiz.yaml
 npm run dev -- create --input quiz.yaml
 # Output: Created form ID: 1a2b3c4d5e6f7g8h9i0j
 
+# Create a form in a specific Drive folder (optional)
+npm run dev -- create --input quiz.yaml --folder-id YOUR_DRIVE_FOLDER_ID
+
 # Download a form
 npm run dev -- download --form-id 1a2b3c4d5e6f7g8h9i0j --output quiz.yaml
 
@@ -169,7 +172,8 @@ More examples in [EXAMPLES.md](EXAMPLES.md):
 1. `npm run dev -- init-template -o quiz.yaml`
 2. Edit `quiz.yaml` in your text editor
 3. `npm run dev -- create --input quiz.yaml`
-4. Share the responder link from output
+4. Optional: add `--folder-id YOUR_DRIVE_FOLDER_ID` to place the form in a specific Drive folder
+5. Share the responder link from output
 
 ### Edit an Existing Quiz
 

@@ -12,6 +12,7 @@ import {
   readQuizFile,
   writeQuizFile,
 } from "./lib/quiz-file.js";
+import { trackDeployment } from "./lib/deployments.js";
 
 dotenv.config();
 
@@ -62,19 +63,36 @@ async function run(): Promise<void> {
       "create",
       "Create a new Google Form quiz from a YAML file.",
       (cmd) =>
-        cmd.option("input", {
-          alias: "i",
-          type: "string",
-          demandOption: true,
-          describe: "Path to the quiz YAML file.",
-        }),
+        cmd
+          .option("input", {
+            alias: "i",
+            type: "string",
+            demandOption: true,
+            describe: "Path to the quiz YAML file.",
+          })
+          .option("folder-id", {
+            type: "string",
+            demandOption: false,
+            describe:
+              "Optional Google Drive folder ID to move the new form into.",
+          }),
       async (argv) => {
         const quiz = await readQuizFile(argv.input);
-        const result = await createGoogleFormFromQuiz(quiz);
+        const result = await createGoogleFormFromQuiz(quiz, {
+          folderId: argv["folder-id"],
+        });
+        const deploymentsPath = await trackDeployment({
+          title: quiz.title,
+          formId: result.formId,
+          responderUrl: result.responderUri,
+          folderId: argv["folder-id"],
+        });
+
         console.log(`Created form ID: ${result.formId}`);
         if (result.responderUri) {
           console.log(`Responder URL: ${result.responderUri}`);
         }
+        console.log(`Saved deployment record to ${deploymentsPath}`);
       },
     )
     .command(

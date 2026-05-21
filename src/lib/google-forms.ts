@@ -1,6 +1,10 @@
-import { forms_v1, google } from "googleapis";
+import { drive_v3, forms_v1, google } from "googleapis";
 import { getAuthorizedClient } from "./google-auth.js";
 import { QuizForm, QuizOption, QuizQuestion } from "./types.js";
+
+export interface CreateFormOptions {
+  folderId?: string;
+}
 
 function questionTypeToGoogleType(
   type: QuizQuestion["type"],
@@ -131,6 +135,40 @@ async function getFormsClient(): Promise<forms_v1.Forms> {
   return google.forms({ version: "v1", auth });
 }
 
+async function getDriveClient(): Promise<drive_v3.Drive> {
+  const auth = await getAuthorizedClient();
+  return google.drive({ version: "v3", auth });
+}
+
+async function moveFormToFolder(
+  formId: string,
+  folderId: string,
+): Promise<void> {
+  const drive = await getDriveClient();
+  const trimmedFolderId = folderId.trim();
+
+  if (trimmedFolderId.length === 0) {
+    return;
+  }
+
+  const current = await drive.files.get({
+    fileId: formId,
+    fields: "parents",
+    supportsAllDrives: true,
+  });
+
+  const parentIds = current.data.parents ?? [];
+  const removeParents = parentIds.length > 0 ? parentIds.join(",") : undefined;
+
+  await drive.files.update({
+    fileId: formId,
+    addParents: trimmedFolderId,
+    removeParents,
+    fields: "id,parents",
+    supportsAllDrives: true,
+  });
+}
+
 function buildCreateRequests(quiz: QuizForm): forms_v1.Schema$Request[] {
   const requests: forms_v1.Schema$Request[] = [
     {
@@ -179,6 +217,7 @@ export async function downloadFormAsQuizFile(
 
 export async function createGoogleFormFromQuiz(
   quiz: QuizForm,
+  options?: CreateFormOptions,
 ): Promise<{ formId: string; responderUri?: string }> {
   const forms = await getFormsClient();
 
@@ -210,6 +249,10 @@ export async function createGoogleFormFromQuiz(
     formId,
     requestBody: { requests },
   });
+
+  if (options?.folderId) {
+    await moveFormToFolder(formId, options.folderId);
+  }
 
   const created = await forms.forms.get({ formId });
 
