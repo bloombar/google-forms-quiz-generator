@@ -37,7 +37,7 @@ If at any point a button or menu name looks slightly different from what's descr
 
 > **Tip:** Always check the top of the page — the project name should say "Quiz Tool" (or whatever you named it). If it shows a different name, click the picker and switch projects. This is a common point of confusion.
 
-## Step 2 — Turn on the Google Forms & Google Drive API
+## Step 2 — Turn on the Google Forms & Google Drive APIs
 
 "API" stands for Application Programming Interface — it's just Google's term for "a feature other programs are allowed to use." You need to flip this switch so the tool can talk to Google Forms.
 
