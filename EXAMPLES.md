@@ -1,64 +1,58 @@
-# Examples and Use Cases
+# Examples
 
-This document provides practical examples of how to use the Quiz Tool for different scenarios.
+Practical, copy-paste-ready quizzes for a range of scenarios. Each example is a complete YAML file you can save and upload as-is.
 
-## Basic Workflow
+## Basic workflows
 
-### 1. Create a Quiz from Scratch
+### Create a quiz from scratch
 
 ```bash
-# Generate a template
-npm run dev -- init-template --output my-quiz.yaml
-
-# Edit the file in your text editor to customize questions
-nano my-quiz.yaml
-
-# Create the form in Google Forms
+npm run dev -- init-template --output my-quiz.yaml   # writes a starter file
+# open my-quiz.yaml in your text editor and customise it
 npm run dev -- create --input my-quiz.yaml
-# Output: Created form ID: 1a2b3c4d5e6f7g8h9i0j
-
-# Share the form with others
-# The form URL is: https://docs.google.com/forms/d/1a2b3c4d5e6f7g8h9i0j/edit
+# prints: Created form ID: 1a2b3c4d...
+#         Responder URL: https://docs.google.com/forms/d/e/.../viewform
+# share the responder URL with the people taking the quiz
 ```
 
-### 2. Download and Modify an Existing Quiz
+### Save a new form to a specific Drive folder
+
+Pass `--folder-id` (find it in the Drive folder's URL, after `/folders/`):
 
 ```bash
-# Download a form you already have
+npm run dev -- create --input my-quiz.yaml --folder-id 1AbCdEfGhIjKlMnOp
+```
+
+### Download an existing form and edit it locally
+
+```bash
 npm run dev -- download --form-id 1a2b3c4d5e6f7g8h9i0j --output my-quiz.yaml
-
-# Edit the YAML file
-nano my-quiz.yaml
-
-# Update the form with your changes
+# edit my-quiz.yaml in your text editor
 npm run dev -- update --form-id 1a2b3c4d5e6f7g8h9i0j --input my-quiz.yaml
 ```
 
-### 3. Duplicate a Quiz
+> Heads-up: `update` **replaces all questions** in the form. There's no merge.
+
+### Duplicate a quiz
 
 ```bash
-# Download existing quiz
 npm run dev -- download --form-id SOURCE_FORM_ID --output template.yaml
-
-# Modify the title
-# (Edit template.yaml and change the title)
-
-# Create a new form from the template
-npm run dev -- create --input template.yaml
+# change the title in template.yaml (and anything else you want different)
+npm run dev -- create --input template.yaml   # creates a brand-new form
 ```
 
-## Example Quizzes
+## Example quizzes
 
-### Mathematics Quiz
+### Mathematics quiz
 
 ```yaml
 version: 1
-title: "Basic Math Quiz"
-description: "Test your arithmetic skills"
+title: Basic Math Quiz
+description: Test your arithmetic skills.
 isQuiz: true
 
 questions:
-  - title: "What is 15 + 27?"
+  - title: What is 15 + 27?
     type: single_choice
     required: true
     points: 1
@@ -69,7 +63,7 @@ questions:
       - value: "44"
       - value: "38"
 
-  - title: "Which of these are even numbers?"
+  - title: Which of these are even numbers?
     type: multiple_choice
     required: true
     points: 2
@@ -81,7 +75,7 @@ questions:
         isCorrect: true
       - value: "33"
 
-  - title: "What is 144 ÷ 12?"
+  - title: What is 144 ÷ 12?
     type: dropdown
     required: true
     points: 1
@@ -92,109 +86,110 @@ questions:
       - value: "14"
       - value: "16"
 
-  - title: "Calculate 25% of 80"
+  - title: Calculate 25% of 80.
     type: short_text
     required: true
+    points: 1
     correctAnswers:
       - "20"
 
-  - title: "Explain your favorite mathematical concept"
+  - title: Explain your favourite mathematical concept.
     type: long_text
-    description: "This is for feedback only - not auto-graded"
+    description: This is for feedback only — not auto-graded.
 ```
 
-### Language Learning Quiz
+### Language-learning quiz
 
 ```yaml
 version: 1
-title: "Spanish Vocabulary Quiz"
-description: "Level 1 - Basic Greetings"
+title: Spanish Vocabulary Quiz
+description: Level 1 — Basic greetings.
 isQuiz: true
 
 questions:
-  - title: "How do you say 'Hello' in Spanish?"
+  - title: How do you say 'Hello' in Spanish?
     type: single_choice
     points: 1
     options:
-      - value: "Hola"
+      - value: Hola
         isCorrect: true
-      - value: "Adiós"
-      - value: "Gracias"
-      - value: "Por favor"
+      - value: Adiós
+      - value: Gracias
+      - value: Por favor
 
-  - title: "Which are formal greetings?"
+  - title: Which are formal greetings?
     type: multiple_choice
     points: 2
     options:
-      - value: "Buenos días"
+      - value: Buenos días
         isCorrect: true
-      - value: "¿Qué onda?"
-      - value: "Buenas tardes"
+      - value: ¿Qué onda?
+      - value: Buenas tardes
         isCorrect: true
-      - value: "¡Ey!"
+      - value: ¡Ey!
 
-  - title: "Select the word for 'water'"
+  - title: Select the word for 'water'.
     type: dropdown
     points: 1
     options:
-      - value: "pan"
-      - value: "agua"
+      - value: pan
+      - value: agua
         isCorrect: true
-      - value: "leche"
+      - value: leche
 
-  - title: "Translate 'Good morning' to Spanish"
+  - title: Translate 'Good morning' to Spanish.
     type: short_text
     points: 1
     correctAnswers:
-      - "Buenos días"
-      - "buenos días"
+      - Buenos días
+      - buenos días
 
-  - title: "Describe your favorite Spanish-speaking country"
+  - title: Describe your favourite Spanish-speaking country.
     type: long_text
 ```
 
-### Employee Training Quiz
+### Employee training quiz
 
 ```yaml
 version: 1
-title: "Company Safety Training - Annual Certification"
-description: "Required annual training. Score 80% or higher to pass."
+title: Company Safety Training — Annual Certification
+description: Required annual training. Score 80% or higher to pass.
 isQuiz: true
 
 questions:
-  - title: "Where is the nearest fire extinguisher from your desk?"
+  - title: Where is the nearest fire extinguisher from your desk?
     type: short_text
     required: true
     points: 5
     correctAnswers:
-      - "Conference Room A"
-      - "conference room a"
+      - Conference Room A
+      - conference room a
 
-  - title: "What should you do if you witness an accident in the office?"
+  - title: What should you do if you witness an accident in the office?
     type: multiple_choice
     required: true
     points: 10
     options:
-      - value: "Report it to your manager immediately"
+      - value: Report it to your manager immediately
         isCorrect: true
-      - value: "Document what happened"
+      - value: Document what happened
         isCorrect: true
-      - value: "Contact HR"
+      - value: Contact HR
         isCorrect: true
-      - value: "Post it on the company chat"
+      - value: Post it on the company chat
 
-  - title: "How often should passwords be changed?"
+  - title: How often should passwords be changed?
     type: dropdown
     required: true
     points: 5
     options:
-      - value: "Every month"
-      - value: "Every 90 days"
+      - value: Every month
+      - value: Every 90 days
         isCorrect: true
-      - value: "Once a year"
-      - value: "Only when asked"
+      - value: Once a year
+      - value: Only when asked
 
-  - title: "Have you completed all required certifications?"
+  - title: Have you completed all required certifications?
     type: single_choice
     required: true
     points: 5
@@ -204,241 +199,211 @@ questions:
       - value: "No"
 ```
 
-### Classroom Assessment
+### Classroom reading-comprehension assessment
 
 ```yaml
 version: 1
-title: "Chapter 3 Reading Comprehension"
-description: "Assessment for 'The Great Gatsby' - Chapter 3"
+title: Chapter 3 Reading Comprehension
+description: Assessment for 'The Great Gatsby' — Chapter 3.
 isQuiz: true
 
 questions:
-  - title: "Where does the party in Chapter 3 take place?"
+  - title: Where does the party in Chapter 3 take place?
     type: single_choice
     required: true
     points: 2
     options:
-      - value: "At Daisy's house"
-      - value: "At Gatsby's mansion"
+      - value: At Daisy's house
+      - value: At Gatsby's mansion
         isCorrect: true
-      - value: "At a hotel in the city"
-      - value: "At Tom's office"
+      - value: At a hotel in the city
+      - value: At Tom's office
 
-  - title: "Which characters attend Gatsby's party? (Select all that apply)"
+  - title: Which characters attend Gatsby's party? (Select all that apply.)
     type: multiple_choice
     required: true
     points: 3
     options:
-      - value: "Daisy and Tom"
+      - value: Daisy and Tom
+      - value: Nick Carraway
         isCorrect: true
-      - value: "Nick Carraway"
+      - value: Jordan Baker
         isCorrect: true
-      - value: "Jordan Baker"
-        isCorrect: true
-      - value: "Myrtle Wilson"
+      - value: Myrtle Wilson
 
-  - title: "What is Gatsby's primary goal at the party?"
+  - title: What is Gatsby's primary goal at the party?
     type: short_text
     required: true
     points: 2
     correctAnswers:
-      - "To see Daisy"
-      - "To reunite with Daisy"
-      - "Meet Daisy"
+      - To see Daisy
+      - To reunite with Daisy
+      - Meet Daisy
 
-  - title: "Analyze the significance of the party scene in Chapter 3. What does it reveal about the characters?"
+  - title: Analyze the significance of the party scene in Chapter 3. What does it reveal about the characters?
     type: long_text
     required: true
     points: 5
 ```
 
-### Customer Feedback Survey
+### Customer feedback survey (not a quiz)
+
+Set `isQuiz: false` to use the tool for plain surveys (no scoring, no answer key).
 
 ```yaml
 version: 1
-title: "Service Feedback Survey"
-description: "We'd love to hear about your experience!"
-isQuiz: false # Not a quiz, just a survey
-
-questions:
-  - title: "How would you rate our service?"
-    type: dropdown
-    required: true
-    options:
-      - value: "Very Poor"
-      - value: "Poor"
-      - value: "Average"
-      - value: "Good"
-      - value: "Excellent"
-
-  - title: "Which aspects did you find most helpful?"
-    type: multiple_choice
-    options:
-      - value: "Product quality"
-      - value: "Customer support"
-      - value: "Pricing"
-      - value: "Delivery speed"
-      - value: "Variety of options"
-
-  - title: "What is your main suggestion for improvement?"
-    type: long_text
-
-  - title: "May we contact you about your feedback?"
-    type: single_choice
-    required: true
-    options:
-      - value: "Yes, please"
-      - value: "No, thank you"
-```
-
-## Advanced Patterns
-
-### Creating Conditional Logic (Workaround)
-
-Google Forms doesn't natively support conditional branching in the API. However, you can:
-
-1. Create separate forms for different paths
-2. Use descriptive section titles to guide respondents
-3. Have respondents return multiple times for different branches
-
-```yaml
-version: 1
-title: "Troubleshooting Guide - Part 1"
-description: "Answer questions to identify your issue"
+title: Service Feedback Survey
+description: We'd love to hear about your experience.
 isQuiz: false
 
 questions:
-  - title: "Does the device turn on?"
+  - title: How would you rate our service?
+    type: dropdown
+    required: true
+    options:
+      - value: Very Poor
+      - value: Poor
+      - value: Average
+      - value: Good
+      - value: Excellent
+
+  - title: Which aspects did you find most helpful?
+    type: multiple_choice
+    options:
+      - value: Product quality
+      - value: Customer support
+      - value: Pricing
+      - value: Delivery speed
+      - value: Variety of options
+
+  - title: What is your main suggestion for improvement?
+    type: long_text
+
+  - title: May we contact you about your feedback?
     type: single_choice
     required: true
     options:
-      - value: "Yes (Go to Part 2 form)"
-      - value: "No (See troubleshooting below)"
+      - value: Yes, please
+      - value: No, thank you
 ```
 
-### Weighted Scoring
+## Patterns
 
-Create quizzes with different point values:
+### Weighted scoring
+
+Give harder questions more points by varying `points:`:
 
 ```yaml
 version: 1
-title: "Final Exam"
+title: Final Exam
 isQuiz: true
 
 questions:
-  - title: "Easy question"
+  - title: Easy question (1 point)
     type: single_choice
     points: 1
     required: true
     options:
-      - value: "Correct"
+      - value: Correct
         isCorrect: true
-      - value: "Incorrect"
+      - value: Incorrect
 
-  - title: "Medium question"
+  - title: Medium question (2 points)
     type: multiple_choice
     points: 2
     required: true
     options:
-      - value: "Option 1"
+      - value: Option 1
         isCorrect: true
-      - value: "Option 2"
+      - value: Option 2
         isCorrect: true
-      - value: "Option 3"
+      - value: Option 3
 
-  - title: "Difficult question"
+  - title: Difficult question (5 points)
     type: single_choice
     points: 5
     required: true
     options:
-      - value: "Correct"
+      - value: Correct
         isCorrect: true
-      - value: "Incorrect"
+      - value: Incorrect
 ```
 
-### Bulk Quiz Creation
+### "Conditional branching" workaround
 
-Create multiple similar quizzes programmatically:
+Google Forms supports conditional sections in its UI, but the public API doesn't currently let this tool set them. If you need branching, the practical workarounds are:
+
+- **Split into multiple forms** and link them — answer choices can include "(See Part 2 form)" text.
+- **Use descriptive labels** in your options to guide the respondent.
+
+```yaml
+version: 1
+title: Troubleshooting Guide — Part 1
+description: Answer to identify your issue.
+isQuiz: false
+
+questions:
+  - title: Does the device turn on?
+    type: single_choice
+    required: true
+    options:
+      - value: Yes (please continue to the Part 2 form)
+      - value: No (see the offline troubleshooting steps below)
+```
+
+### Bulk quiz creation from a shell script
+
+Generate several similar quizzes in a loop:
 
 ```bash
 #!/bin/bash
 # create-multiple.sh
 
 for i in {1..5}; do
-  cat > "quiz-$i.yaml" << EOF
+  cat > "quiz-$i.yaml" <<EOF
 version: 1
-title: "Quiz Set A - Version $i"
+title: Quiz Set A — Version $i
 isQuiz: true
 questions:
-  - title: "Question 1"
+  - title: Sample question $i
     type: single_choice
     points: 1
     options:
-      - value: "A"
+      - value: A
         isCorrect: true
-      - value: "B"
+      - value: B
 EOF
   npm run dev -- create --input "quiz-$i.yaml"
-  echo "Created quiz-$i"
 done
 ```
 
-## Troubleshooting Examples
+See [ADVANCED.md](ADVANCED.md) for more scripting patterns and CI/CD ideas.
 
-### Issue: Quiz created but questions missing
+## Troubleshooting these examples
 
-**Symptom:** Form is created but has no questions
+### The form was created but has no questions
 
-**Solution:** Check that your YAML validates:
+Your YAML probably has a syntax error that the parser silently accepted (e.g., a misindented `questions:` list). Re-generate the template and compare structure:
 
 ```bash
 npm run dev -- init-template -o test.yaml
-npm run dev -- create --input test.yaml
+diff test.yaml my-quiz.yaml
 ```
 
-### Issue: Answer keys not working
+### Auto-grading shows 0%
 
-**Symptom:** Grading shows 0% even though answers are correct
+You need **all three** of:
 
-**Solution:** Ensure you have:
+1. `isQuiz: true` at the top.
+2. `points: <number>` on each graded question.
+3. Correct answers marked via `isCorrect: true` (for choice) or `correctAnswers: [...]` (for text).
 
-1. `isQuiz: true` in the form
-2. `points: <number>` on each question
-3. Correct answers marked (for choice questions, use `isCorrect: true`)
+### `Error: Cannot find form`
 
-```yaml
-questions:
-  - title: "Question"
-    type: single_choice
-    points: 1 # Must have points
-    required: true
-    options:
-      - value: "Correct"
-        isCorrect: true # Must mark correct answer
-```
+The form ID is wrong, or the signed-in Google account doesn't have edit access to it. Open the form in your browser to confirm the ID and that you can edit it.
 
-### Issue: Can't download form
+## Next
 
-**Symptom:** Error like "Cannot find form"
-
-**Solution:**
-
-1. Verify the form ID is correct
-2. Verify you have edit access to the form
-3. Check that your Google authentication is valid:
-
-```bash
-npm run dev -- download --form-id <FORM_ID> --output test.yaml
-```
-
-## Performance Tips
-
-- **Large quizzes**: Quizzes with 100+ questions work fine but take longer to upload
-- **Frequent updates**: Consider batching multiple changes into one update rather than updating after each question edit
-- **Backup your YAML**: Always keep a local copy of your quiz YAML file
-
-## Next Steps
-
-1. See [YAML_FORMAT.md](YAML_FORMAT.md) for complete field reference
-2. See [GOOGLE_SETUP.md](GOOGLE_SETUP.md) if you haven't set up credentials yet
-3. Check the main [README.md](README.md) for command reference
+- Full field reference: [YAML_FORMAT.md](YAML_FORMAT.md).
+- Scripting, CI, environment variables: [ADVANCED.md](ADVANCED.md).
+- Command reference: [README.md](README.md).

@@ -1,101 +1,129 @@
-# Advanced Usage Guide
+# Advanced Usage
 
-This document covers advanced patterns, CLI tips, and edge cases.
+For users who are comfortable with the basics and want to script, automate, or deeply customise the tool. If you're just getting started, read [QUICKSTART.md](QUICKSTART.md) first.
 
-## Command-Line Arguments
+## Command reference
 
-### Full Command Reference
+Every command is run as:
 
 ```bash
 npm run dev -- <command> [options]
 ```
 
-### init-template
+In production (after `npm run build`) you can also use `npm run start -- <command>` or, if you've installed the tool globally, `quiz-tool <command>`.
 
-Generate a template YAML file.
+### `init-template`
+
+Write a starter YAML file with one of each question type.
 
 ```bash
-npm run dev -- init-template \
-  --output quiz.yaml
-
-# Short form
+npm run dev -- init-template --output quiz.yaml
+# short form:
 npm run dev -- init-template -o quiz.yaml
 ```
 
-**Options:**
+| Option            | Required | Description                                |
+| ----------------- | -------- | ------------------------------------------ |
+| `-o, --output`    | yes      | Path to write the template YAML file.      |
 
-- `-o, --output` (required): Where to save the template file
+### `create`
 
-### create
-
-Create a new Google Form from a YAML file.
-
-```bash
-npm run dev -- create \
-  --input quiz.yaml
-
-# Short form
-npm run dev -- create -i quiz.yaml
-```
-
-**Options:**
-
-- `-i, --input` (required): Path to the YAML file
-
-**Output:**
-
-```
-Created form ID: 1a2b3c4d5e6f7g8h9i0j
-Responder URL: https://docs.google.com/forms/d/e/...
-```
-
-Store the form ID for future updates.
-
-### download
-
-Download an existing Google Form as a YAML file.
+Upload a YAML file as a new Google Form.
 
 ```bash
-npm run dev -- download \
-  --form-id 1a2b3c4d5e6f7g8h9i0j \
-  --output quiz.yaml
-
-# Short form
-npm run dev -- download -f 1a2b3c4d5e6f7g8h9i0j -o quiz.yaml
+npm run dev -- create --input quiz.yaml
+npm run dev -- create --input quiz.yaml --folder-id 1AbCdEfGhIjKlMnOp
 ```
 
-**Options:**
+| Option            | Required | Description                                                                                                  |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `-i, --input`     | yes      | Path to the YAML file.                                                                                       |
+| `--folder-id`     | no       | Drive folder ID to move the new form into. Find it after `/folders/` in the folder's URL.                    |
 
-- `-f, --form-id` (required): The Google Form ID to download
-- `-o, --output` (required): Where to save the YAML file
+Prints the new form ID, the responder URL, and appends a record to `.deployments/deployments.json` (see [Deployment tracking](#deployment-tracking) below).
 
-**Note:** This skips non-question elements (images, videos, sections).
+### `download`
 
-### update
-
-Replace questions in an existing Google Form with content from a YAML file.
+Save an existing Google Form as YAML.
 
 ```bash
-npm run dev -- update \
-  --form-id 1a2b3c4d5e6f7g8h9i0j \
-  --input quiz.yaml
-
-# Short form
-npm run dev -- update -f 1a2b3c4d5e6f7g8h9i0j -i quiz.yaml
+npm run dev -- download --form-id 1a2b3c4d... --output quiz.yaml
+# short form:
+npm run dev -- download -f 1a2b3c4d... -o quiz.yaml
 ```
 
-**Options:**
+| Option            | Required | Description                                                       |
+| ----------------- | -------- | ----------------------------------------------------------------- |
+| `-f, --form-id`   | yes      | The Google Form ID to download.                                   |
+| `-o, --output`    | yes      | Path to write the YAML file.                                      |
 
-- `-f, --form-id` (required): The Google Form ID to update
-- `-i, --input` (required): Path to the YAML file
+Non-question items (images, videos, page sections) are skipped silently.
 
-**Warning:** This replaces ALL questions. Use with care!
+### `update`
 
-## Scripting and Automation
+Replace **all** questions in an existing form with the contents of a YAML file.
 
-### Batch Create Multiple Quizzes
+```bash
+npm run dev -- update --form-id 1a2b3c4d... --input quiz.yaml
+```
 
-Create quizzes in a loop from multiple YAML files:
+| Option            | Required | Description                                              |
+| ----------------- | -------- | -------------------------------------------------------- |
+| `-f, --form-id`   | yes      | The Google Form ID to update.                            |
+| `-i, --input`     | yes      | Path to the YAML file.                                   |
+
+> **Warning:** This deletes every existing question first. There is no merge mode. Keep a backup if you want one.
+
+## Environment variables
+
+The tool reads from `.env` (or the actual environment) at startup. Copy `.env.example` to `.env` to override defaults:
+
+```dotenv
+GOOGLE_CREDENTIALS_PATH=/absolute/path/to/credentials.json
+GOOGLE_TOKEN_PATH=/absolute/path/to/tokens/google-oauth.json
+```
+
+| Variable                  | Default                         | Description                                         |
+| ------------------------- | ------------------------------- | --------------------------------------------------- |
+| `GOOGLE_CREDENTIALS_PATH` | `credentials.json`              | Path to the OAuth client credentials file.         |
+| `GOOGLE_TOKEN_PATH`       | `tokens/google-oauth.json`      | Where the cached sign-in token is written.         |
+
+You can also set them inline:
+
+```bash
+GOOGLE_CREDENTIALS_PATH=creds-dev.json npm run dev -- create -i quiz.yaml
+```
+
+This is the cleanest way to run the same command against multiple Google accounts (e.g. dev vs. prod).
+
+## Deployment tracking
+
+Every successful `create` appends a JSON entry to `.deployments/deployments.json`:
+
+```json
+[
+  {
+    "title": "My Quiz",
+    "formId": "1a2b3c4d5e6f7g8h9i0j",
+    "responderUrl": "https://docs.google.com/forms/d/e/.../viewform",
+    "folderId": "1AbCdEfGhIjKlMnOp",
+    "deployedAt": "2026-05-21T19:30:00.000Z"
+  }
+]
+```
+
+This is a local file (not synced to Google) intended as your own running log of forms you've created — useful if you've forgotten a form ID, or want to script bulk updates. The directory is in `.gitignore` so it's never committed.
+
+If you want to query it, any JSON tool works:
+
+```bash
+# list every form you've ever deployed
+cat .deployments/deployments.json | jq '.[] | "\(.title): \(.formId)"'
+```
+
+## Scripting and automation
+
+### Batch-create from a folder of YAML files
 
 ```bash
 #!/bin/bash
@@ -105,27 +133,28 @@ for file in quizzes/*.yaml; do
 done
 ```
 
-### Batch Download All Forms
+### Batch-download a list of form IDs
 
-If you have a list of form IDs:
+Put one form ID per line in `form_ids.txt`:
 
 ```bash
 #!/bin/bash
-while read form_id; do
+mkdir -p downloads
+while read -r form_id; do
   echo "Downloading $form_id..."
   npm run dev -- download \
     --form-id "$form_id" \
-    --output "downloads/$form_id.yaml"
+    --output "downloads/${form_id}.yaml"
 done < form_ids.txt
 ```
 
-### Programmatic Quiz Generation
+### Programmatic quiz generation
 
-Generate quizzes from data:
+Generate a quiz from data using Node.js:
 
-```javascript
-// generate-quiz.js
-import fs from "fs";
+```js
+// generate-quiz.mjs
+import fs from "node:fs";
 import yaml from "js-yaml";
 
 const questions = [];
@@ -134,128 +163,39 @@ for (let i = 1; i <= 10; i++) {
     title: `Question ${i}`,
     type: "single_choice",
     points: 1,
-    options: [{ value: "A" }, { value: "B", isCorrect: true }, { value: "C" }],
+    options: [
+      { value: "A" },
+      { value: "B", isCorrect: true },
+      { value: "C" },
+    ],
   });
 }
 
 const quiz = {
   version: 1,
-  title: `Auto-Generated Quiz`,
+  title: "Auto-Generated Quiz",
   isQuiz: true,
   questions,
 };
 
 fs.writeFileSync("generated-quiz.yaml", yaml.dump(quiz));
-console.log("Quiz generated: generated-quiz.yaml");
+console.log("Wrote generated-quiz.yaml");
 ```
 
-Run with:
+Run:
 
 ```bash
-node generate-quiz.js
+node generate-quiz.mjs
 npm run dev -- create --input generated-quiz.yaml
 ```
 
-## Environment Configuration
+You can adapt this pattern to read questions from a CSV, a database, an LLM, etc., then push them to Google Forms.
 
-The tool respects environment variables for credential paths. Set them in `.env`:
+## CI/CD integration
 
-```bash
-# .env
-GOOGLE_CREDENTIALS_PATH=/path/to/credentials.json
-GOOGLE_TOKEN_PATH=/path/to/tokens/google-oauth.json
-```
+You can keep your quizzes in Git and auto-sync them to Google Forms whenever a YAML changes.
 
-Or export them:
-
-```bash
-export GOOGLE_CREDENTIALS_PATH=/path/to/credentials.json
-npm run dev -- create --input quiz.yaml
-```
-
-Defaults:
-
-- `GOOGLE_CREDENTIALS_PATH`: `credentials.json` (project root)
-- `GOOGLE_TOKEN_PATH`: `tokens/google-oauth.json` (project root)
-
-## Working with Large Quizzes
-
-### Performance with Many Questions
-
-The tool handles quizzes with 100+ questions, but uploads take longer. Tips:
-
-1. **Upload in batches**: Create forms incrementally if needed
-2. **Batch edits**: Make multiple changes before uploading
-3. **Use `update` carefully**: It processes all questions at once
-
-Example workflow:
-
-```bash
-# Create form with initial questions
-npm run dev -- create --input quiz-part1.yaml
-
-# Form ID returned: 1a2b3c4d5e6f7g8h9i0j
-
-# Later, add more questions by updating
-npm run dev -- update \
-  --form-id 1a2b3c4d5e6f7g8h9i0j \
-  --input quiz-all-questions.yaml
-```
-
-### Memory Management
-
-For very large YAML files (1000+ questions), the tool may consume significant memory. If you hit limits:
-
-1. Split into multiple forms
-2. Run the tool with more memory: `node --max-old-space-size=4096 dist/cli.js`
-
-## Error Handling and Debugging
-
-### Enable Verbose Output
-
-Add a `DEBUG` flag (for future versions):
-
-```bash
-DEBUG=* npm run dev -- download --form-id 1a2b3c4d5e6f7g8h9i0j -o quiz.yaml
-```
-
-### Common Errors
-
-**"Cannot find form"**
-
-- Verify form ID is correct
-- Check you have edit access
-- Try the URL: `https://docs.google.com/forms/d/FORM_ID/edit`
-
-**"Invalid credentials.json"**
-
-- Ensure it's valid JSON
-- Check it has `installed` or `web` field
-- Verify file path in `.env`
-
-**"OAuth token expired"**
-
-- Delete `tokens/google-oauth.json`
-- Run any command again—it will re-authenticate
-
-**"YAML parse error"**
-
-- Validate YAML syntax with an online tool
-- Check indentation (must be consistent)
-- Ensure all strings are quoted if they contain special characters
-
-### Check Compiled JavaScript
-
-The compiled code is in `dist/`:
-
-```bash
-npm run build
-ls -la dist/
-```
-
-## CI/CD Integration
-
-### GitHub Actions Example
+### GitHub Actions example
 
 ```yaml
 # .github/workflows/quiz-sync.yml
@@ -270,127 +210,148 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
       - run: npm install
-      - run: npm run build
+      - name: Restore credentials
+        run: echo "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -d > credentials.json
+      - name: Restore OAuth token
+        run: |
+          mkdir -p tokens
+          echo "${{ secrets.GOOGLE_OAUTH_TOKEN_BASE64 }}" | base64 -d > tokens/google-oauth.json
       - name: Update forms
-        env:
-          GOOGLE_CREDENTIALS_PATH: ${{ secrets.GOOGLE_CREDENTIALS }}
         run: |
           for file in quizzes/*.yaml; do
-            npm run start -- create --input "$file"
+            npm run dev -- create --input "$file"
           done
 ```
 
-Set `GOOGLE_CREDENTIALS` secret to your base64-encoded credentials.json.
+Notes:
 
-## Version Control Best Practices
+- Store both `credentials.json` and an already-authenticated `tokens/google-oauth.json` as base64-encoded GitHub secrets. CI can't open a browser to do the OAuth dance, so you need to run the first authorization locally and copy the resulting token file to CI.
+- Refresh tokens last until you revoke them — but if Google invalidates one, you'll need to re-authenticate locally and rotate the secret.
 
-### Store Quizzes in Git
+## Working with very large quizzes
+
+The tool handles quizzes with hundreds of questions, but uploads slow down as size grows. Practical advice:
+
+- **Split very large assessments** into multiple shorter forms — easier on respondents too.
+- **Edit YAML in bulk** before pushing, rather than uploading after every small change.
+- **Memory:** if you ever push a YAML with thousands of questions, increase Node's heap: `node --max-old-space-size=4096 dist/cli.js ...`.
+
+## Running tests
+
+The project ships with a vitest test suite covering YAML I/O, validation, the Google Forms mapping layer, OAuth helpers, deployment tracking, and the CLI.
 
 ```bash
-# Good: Track YAML files
-git add quizzes/
-git commit -m "Add biology quiz"
-
-# Don't commit credentials
-# .gitignore already handles this
+npm test            # run all tests once
+npm run test:watch  # re-run tests as you edit
 ```
 
-### Workflow: Edit YAML → Upload → Verify
+A coverage report is written to `coverage/` when tests run.
+
+## Error handling and debugging
+
+### Common error messages
+
+| Message                                 | Likely cause                                                                              |
+| --------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `Cannot find credentials`               | `credentials.json` is missing — finish [GOOGLE_SETUP.md](GOOGLE_SETUP.md).                |
+| `OAuth did not return a refresh token`  | Revoke at <https://myaccount.google.com/permissions> and re-run.                          |
+| `Cannot find form`                      | Wrong form ID, or your account doesn't have edit access.                                  |
+| `YAML parse error`                      | Bad indentation or quoting — paste your file into an online YAML linter.                  |
+| `Invalid credentials.json format`       | Downloaded the wrong file type (e.g. Service account instead of OAuth client ID).         |
+
+### Re-authenticating
+
+If your saved token is invalid, delete it:
 
 ```bash
-# 1. Edit locally
-nano quizzes/math-quiz.yaml
-
-# 2. Upload
-npm run dev -- create --input quizzes/math-quiz.yaml
-# Output: Created form ID: 1a2b3c4d5e6f7g8h9i0j
-
-# 3. Verify in Google Forms UI
-# https://docs.google.com/forms/d/1a2b3c4d5e6f7g8h9i0j/edit
-
-# 4. Store form ID for reference
-echo "1a2b3c4d5e6f7g8h9i0j" > quizzes/math-quiz.id
-git add quizzes/math-quiz.yaml quizzes/math-quiz.id
-git commit -m "Add math quiz (ID: 1a2b3c4d...)"
+rm tokens/google-oauth.json
 ```
 
-## Extending the Tool
+The next command will reopen the browser to ask for permission again.
 
-### Adding Custom Question Types
-
-To add a new question type (currently not supported):
-
-1. Update `types.ts` to add the new type
-2. Update `validation.ts` to validate it
-3. Update `google-forms.ts` to map it to Google Forms API
-4. Test thoroughly
-
-Example: Supporting essay questions with rubrics would require:
-
-- New YAML structure
-- Google Forms API integration
-- Validation logic
-
-### Forking and Contributing
-
-See the source in `src/`:
-
-- `cli.ts`: CLI commands
-- `lib/types.ts`: TypeScript interfaces
-- `lib/validation.ts`: Input validation
-- `lib/quiz-file.ts`: YAML I/O
-- `lib/google-forms.ts`: Google Forms API
-- `lib/google-auth.ts`: OAuth handling
-
-## Tips & Tricks
-
-### Quick ID Extraction
-
-If you see a form URL, extract the ID:
+### Inspecting the compiled output
 
 ```bash
-# From: https://docs.google.com/forms/d/1a2b3c4d5e6f7g8h9i0j/edit
-# Extract: 1a2b3c4d5e6f7g8h9i0j
+npm run build
+ls -la dist/
+```
 
+The compiled JS lives in `dist/` and mirrors the structure of `src/`.
+
+## Version control best practices
+
+- **Commit your quiz YAMLs** to a Git repository. They're plain text and diff cleanly.
+- **Don't commit** `credentials.json`, `tokens/`, or `.deployments/` — they're already excluded by `.gitignore`.
+- **Record form IDs** alongside the YAML so you can `update` later. A simple convention:
+
+  ```text
+  quizzes/
+    math-quiz.yaml
+    math-quiz.id      # contains a single line with the form ID
+  ```
+
+## Extending the tool
+
+The source is organized so that each concern lives in one file:
+
+| File                              | Responsibility                                  |
+| --------------------------------- | ----------------------------------------------- |
+| `src/cli.ts`                      | Command definitions (yargs).                    |
+| `src/lib/types.ts`                | TypeScript interfaces for the quiz model.       |
+| `src/lib/validation.ts`           | Pre-upload YAML validation.                     |
+| `src/lib/quiz-file.ts`            | Reading, writing, and templating YAML files.    |
+| `src/lib/google-forms.ts`         | Translating between quiz model and Google API.  |
+| `src/lib/google-auth.ts`          | OAuth flow and token caching.                   |
+| `src/lib/deployments.ts`          | Appending entries to `.deployments/`.            |
+
+To add a new question type, you'd typically:
+
+1. Add it to the `QuizQuestionType` union in `types.ts`.
+2. Teach `validation.ts` how to validate it.
+3. Add a mapping in `google-forms.ts` between the new type and the corresponding `Schema$Item`.
+4. Add tests in `tests/`.
+
+## Tips
+
+### Extracting an ID from a Google Forms URL
+
+```bash
 url="https://docs.google.com/forms/d/1a2b3c4d5e6f7g8h9i0j/edit"
-id=$(echo "$url" | grep -oP 'd/\K[^/]+')
-echo "$id"  # Output: 1a2b3c4d5e6f7g8h9i0j
+echo "$url" | sed -E 's|.*/d/([^/]+)/.*|\1|'
+# 1a2b3c4d5e6f7g8h9i0j
 ```
 
-### Sync Multiple Environments
-
-Use different Google accounts for dev/prod:
+### Using different Google accounts side by side
 
 ```bash
-# Dev environment
-GOOGLE_CREDENTIALS_PATH=credentials-dev.json npm run dev -- create --input quiz.yaml
+# Dev (account A):
+GOOGLE_CREDENTIALS_PATH=creds-dev.json GOOGLE_TOKEN_PATH=tokens/dev.json \
+  npm run dev -- create -i quiz.yaml
 
-# Prod environment
-GOOGLE_CREDENTIALS_PATH=credentials-prod.json npm run dev -- create --input quiz.yaml
+# Prod (account B):
+GOOGLE_CREDENTIALS_PATH=creds-prod.json GOOGLE_TOKEN_PATH=tokens/prod.json \
+  npm run dev -- create -i quiz.yaml
 ```
 
-### Preview YAML Before Upload
+### Preview a YAML before uploading
 
 ```bash
-# Generate and review template
 npm run dev -- init-template -o preview.yaml
-cat preview.yaml
-
-# Or download and inspect
+cat preview.yaml         # quick sanity check
+# or
 npm run dev -- download -f FORM_ID -o preview.yaml
-cat preview.yaml
 ```
 
-## Support and Issues
+## Reporting issues
 
-- **Questions**: Check [EXAMPLES.md](EXAMPLES.md) and [YAML_FORMAT.md](YAML_FORMAT.md)
-- **Setup issues**: See [GOOGLE_SETUP.md](GOOGLE_SETUP.md)
-- **Bugs**: Open an issue with:
-  1. Command you ran
-  2. Error message
-  3. Sample YAML file (scrubbed of sensitive data)
+When filing a bug, please include:
+
+1. The command you ran.
+2. The full error message.
+3. A minimal YAML file that reproduces the issue (scrubbed of any sensitive data).
+4. The Node version (`node --version`).

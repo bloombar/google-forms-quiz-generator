@@ -2,167 +2,111 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-05-21
+## [Unreleased]
 
 ### Added
 
-- Initial release of Google Forms Quiz Tool
-- **CLI Commands**:
-  - `init-template` - Generate starter YAML quiz template
-  - `create` - Create new Google Forms from YAML
-  - `download` - Download existing Google Forms as YAML
-  - `update` - Update existing Google Forms from YAML
-- **Question Types**:
-  - Single choice (radio buttons)
-  - Multiple choice (checkboxes)
-  - Dropdown (select list)
-  - Short text (single line)
-  - Long text (multi-line paragraph)
-- **Features**:
-  - Answer keys with correct answer marking
-  - Point-based scoring system
-  - Optional/required question fields
-  - Question descriptions
-  - Quiz vs. survey mode
-  - YAML format for version control
-  - Strict input validation
-- **Authentication**:
-  - OAuth 2.0 with local browser flow
-  - Token caching for seamless subsequent use
-  - Support for custom credential paths via environment
-- **Build & Development**:
-  - TypeScript source
-  - Production build artifacts
-  - ESM (ES Modules) support
-  - npm scripts for build, dev, and lint
-- **Documentation** (1500+ lines):
-  - README with overview and command reference
-  - QUICKSTART for 5-minute setup
-  - GOOGLE_SETUP with step-by-step Google Cloud configuration
-  - YAML_FORMAT with complete specification
-  - EXAMPLES with real-world quiz samples
-  - ADVANCED with scripting and CI/CD patterns
-  - INDEX for documentation navigation
-  - PROJECT_SUMMARY with detailed feature overview
+- `--folder-id` option on the `create` command to place new forms in a specific Google Drive folder.
+- Local deployment log — every successful `create` appends to `.deployments/deployments.json` so you have a running record of forms you've created.
+- A full vitest test suite covering YAML I/O, validation, the Google Forms mapping layer, OAuth helpers, deployment tracking, and the CLI. Coverage report written to `coverage/`.
 
-### Design Decisions
+### Changed
 
-- **YAML over JSON/CSV**: Human-readable, version control friendly
-- **Command-line focus**: Simple, scriptable workflow
-- **Google Forms API only**: No custom backend or database
-- **Local OAuth**: No server component needed
-- **Strict validation**: Catch errors before uploading
-- **Question content only**: Focuses on quiz logic, not styling
+- Documentation rewritten throughout for clarity and to lower the barrier for users new to the Google Cloud Console and OAuth. Major rewrites: `README.md`, `GOOGLE_SETUP.md`, `QUICKSTART.md`, `YAML_FORMAT.md`.
 
-### Known Limitations
+## [1.0.0] — 2026-05-21
 
-- Form styling (colors, fonts) not supported
-- Form sections/grouping not supported
-- Rich media (images, videos) not managed (skipped on download)
-- Response viewing/analytics not included
-- Conditional logic/branching not supported
-- Time limits and progress bars not available
+### Added
+
+- Initial release.
+- **CLI commands**:
+  - `init-template` — generate a starter YAML quiz template.
+  - `create` — create a new Google Form from YAML.
+  - `download` — download an existing Google Form as YAML.
+  - `update` — replace the questions in an existing form from YAML.
+- **Question types**: single choice (radio), multiple choice (checkboxes), dropdown, short text, long text.
+- **Features**: correct-answer marking, point-based scoring, required vs. optional fields, per-question descriptions, quiz-vs-survey mode, strict YAML validation.
+- **Authentication**: OAuth 2.0 with local browser flow, token caching, configurable credentials and token paths via `.env`.
+- **Build & dev tooling**: TypeScript source, ESM modules, `tsx`-based dev mode, npm scripts for build/dev/lint.
+- **Documentation**: README, QUICKSTART, GOOGLE_SETUP, YAML_FORMAT, EXAMPLES, ADVANCED, INDEX.
+
+### Known limitations (intentional scope)
+
+- No form styling (colours, fonts, header images).
+- No page sections or conditional branching.
+- No rich media (images, videos) — skipped on download.
+- No response analytics.
+- Text auto-grading is exact-match only (Google Forms limitation).
 
 ### Security
 
-- OAuth credentials stored locally in `tokens/`
-- Credentials file excluded from git via `.gitignore`
-- No credentials sent to external services
-- Local authentication flow (no server component)
-
-### Quality
-
-- 100% TypeScript with strict type checking
-- Comprehensive input validation
-- Meaningful error messages
-- Clean, modular code architecture
-- Full test with included sample quiz
+- OAuth client credentials and tokens stored locally and excluded from version control via `.gitignore`.
+- Local browser auth flow only; no third-party server is involved.
+- The tool requests only the `forms.body` and `drive.file` scopes — it cannot read your wider Drive, Gmail, or Calendar.
 
 ---
 
-## Planned Future Enhancements
+## Planned
 
-### Version 1.1
+### Near term
 
-- [ ] Dry-run mode (`--dry-run` flag)
-- [ ] JSON import/export support
-- [ ] CSV import for questions
-- [ ] Question reordering capabilities
-- [ ] Batch operations on multiple forms
-- [ ] Form validation report
+- [ ] `--dry-run` flag to preview changes without uploading.
+- [ ] JSON and CSV import for questions.
+- [ ] Optional non-destructive `update` mode (append/replace specific questions).
+- [ ] Question reordering helpers.
 
-### Version 1.2
+### Mid term
 
-- [ ] Web UI for quiz editing
-- [ ] Visual diff when downloading changes
-- [ ] Form cloning with answer key copies
-- [ ] Webhook integration for automated uploads
-- [ ] Form templates and presets
+- [ ] Web UI for quiz editing.
+- [ ] Visual diff during `download` so changes from Google Forms surface clearly.
+- [ ] Webhook integration for automated uploads on file change.
 
-### Version 2.0
+### Long term
 
-- [ ] Support for form sections
-- [ ] Basic form image upload
-- [ ] Response summary retrieval
-- [ ] Custom scoring rules
-- [ ] Form analytics
+- [ ] Support for form sections.
+- [ ] Basic image upload to question prompts.
+- [ ] Response summary retrieval.
+- [ ] Custom scoring rules (e.g. partial credit, numeric tolerance).
 
-## Support
+## Support and contributing
 
-For issues, questions, or feature requests:
+- For setup help: [GOOGLE_SETUP.md](GOOGLE_SETUP.md).
+- For usage patterns: [EXAMPLES.md](EXAMPLES.md).
+- For YAML field reference: [YAML_FORMAT.md](YAML_FORMAT.md).
+- For scripting / CI: [ADVANCED.md](ADVANCED.md).
 
-1. Check [GOOGLE_SETUP.md](GOOGLE_SETUP.md) for setup help
-2. Review [EXAMPLES.md](EXAMPLES.md) for usage patterns
-3. See [ADVANCED.md](ADVANCED.md) for troubleshooting
-4. Consult [YAML_FORMAT.md](YAML_FORMAT.md) for format validation
+Source layout for contributors:
 
-## Contributing
-
-The codebase is organized as follows:
-
-```
+```text
 src/
-├── cli.ts              - CLI command handlers
+├── cli.ts              ← CLI command handlers (yargs)
 └── lib/
-    ├── types.ts        - TypeScript interfaces
-    ├── validation.ts   - YAML schema validation
-    ├── quiz-file.ts    - YAML file I/O
-    ├── google-forms.ts - Google Forms API wrapper
-    └── google-auth.ts  - OAuth authentication
+    ├── types.ts        ← TypeScript interfaces
+    ├── validation.ts   ← YAML validation
+    ├── quiz-file.ts    ← YAML file I/O
+    ├── google-forms.ts ← Google Forms API wrapper
+    ├── google-auth.ts  ← OAuth authentication
+    └── deployments.ts  ← Local deployment log
+tests/
+└── *.test.ts           ← vitest suite mirroring src/
 ```
 
-To contribute:
+Workflow:
 
-1. Make changes in `src/`
-2. Run `npm run build` to compile
-3. Test with `npm run dev -- <command>`
-4. Ensure no ESLint errors: `npm run lint`
+1. Make your changes in `src/` (and update tests in `tests/`).
+2. `npm run lint` — fix any style errors.
+3. `npm test` — make sure the suite passes.
+4. `npm run build` — verify it still compiles.
 
-## Version History
+### Release process
 
-- **1.0.0** (May 21, 2026) - Initial release
+1. Bump the version in `package.json`.
+2. Move the `[Unreleased]` section in this file under a new version heading with today's date.
+3. `git tag v<version>` and `git push --tags`.
+4. (Optional) `npm publish`.
 
----
+### Backwards compatibility
 
-## Notes on Releases
-
-### Release Process
-
-1. Update version in `package.json`
-2. Update this CHANGELOG file
-3. Tag release: `git tag v1.0.0`
-4. Push: `git push && git push --tags`
-5. (Optional) Publish to npm: `npm publish`
-
-### Backwards Compatibility
-
-The YAML format includes `version: 1` for future compatibility. The tool will support version 1 indefinitely and can handle upgraded YAML formats in future versions.
-
-### Support Timeline
-
-- **1.0.x**: Bug fixes and patch releases
-- **1.x.x**: Minor features (backwards compatible)
-- **2.0.0+**: Major breaking changes allowed
+The YAML header includes `version: 1`. Version 1 will remain supported indefinitely; future format changes will introduce `version: 2` and the tool will accept both.

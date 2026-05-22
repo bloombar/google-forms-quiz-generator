@@ -1,376 +1,156 @@
 # Project File Guide
 
-Navigate the quiz-generator project with this file reference.
+A reference to every file and folder in this project, what it does, and when you'd touch it.
 
-## 📚 Documentation Files
+## Documentation
 
-Start with any of these based on your needs:
+| File                                          | Purpose                                                          | Read when…                              |
+| --------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------- |
+| [README.md](README.md)                        | Main overview, command reference, common workflows.              | First stop for everyone.                |
+| [GETTING_STARTED.md](GETTING_STARTED.md)      | Friendly one-page orientation.                                   | You want a gentle introduction.         |
+| [QUICKSTART.md](QUICKSTART.md)                | Install + first form, step by step.                              | You're setting the tool up.             |
+| [GOOGLE_SETUP.md](GOOGLE_SETUP.md)            | Beginner-friendly Google Cloud + OAuth walkthrough.              | You need to connect to Google.          |
+| [MANUAL_SETUP.md](MANUAL_SETUP.md)            | One-page checklist version of the Google setup.                  | You've done this kind of setup before.  |
+| [YAML_FORMAT.md](YAML_FORMAT.md)              | Complete reference for the YAML quiz format.                     | You're writing or editing quiz files.   |
+| [EXAMPLES.md](EXAMPLES.md)                    | Ready-to-copy quizzes for math, language, training, surveys.     | You want a starting point.              |
+| [ADVANCED.md](ADVANCED.md)                    | Scripting, environment variables, CI/CD, deployment log.         | You're scripting or automating.         |
+| [INDEX.md](INDEX.md)                          | Topic-by-topic map of all documentation.                         | You're looking for something specific.  |
+| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)      | High-level project summary and architecture.                     | You want the big picture.               |
+| [CHANGELOG.md](CHANGELOG.md)                  | Release history and roadmap.                                     | You want to see what's changed.         |
+| [FILE_GUIDE.md](FILE_GUIDE.md)                | This file.                                                       | You want a file-by-file reference.      |
 
-| File                                         | Size      | Purpose                                  | Read If...                    |
-| -------------------------------------------- | --------- | ---------------------------------------- | ----------------------------- |
-| **[GETTING_STARTED.md](GETTING_STARTED.md)** | 3 KB      | **START HERE** - Essential setup & usage | You're new to the tool        |
-| **[QUICKSTART.md](QUICKSTART.md)**           | 3.5 KB    | 5-minute setup guide                     | You want fast setup           |
-| [README.md](README.md)                       | 5 KB      | Project overview & command reference     | You want the main docs        |
-| [GOOGLE_SETUP.md](GOOGLE_SETUP.md)           | 5 KB      | Google Cloud OAuth setup guide           | Setting up Google credentials |
-| [YAML_FORMAT.md](YAML_FORMAT.md)             | 9 KB      | Complete YAML specification              | You need format details       |
-| [EXAMPLES.md](EXAMPLES.md)                   | 10 KB     | Real-world quiz examples                 | You want sample quizzes       |
-| [ADVANCED.md](ADVANCED.md)                   | 8 KB      | Scripting, CI/CD, advanced patterns      | You're an advanced user       |
-| [INDEX.md](INDEX.md)                         | 7 KB      | Documentation navigation guide           | You need to find something    |
-| [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)     | 9 KB      | Complete project overview                | You want the full picture     |
-| [CHANGELOG.md](CHANGELOG.md)                 | 5 KB      | Version history & roadmap                | You want release notes        |
-| **[FILE_GUIDE.md](FILE_GUIDE.md)**           | This file | Project file reference                   | You want a file map           |
+## Source code (in `src/`)
 
-**Total documentation:** 2,300+ lines covering every aspect of the tool.
+| File                                                       | Purpose                                                       |
+| ---------------------------------------------------------- | ------------------------------------------------------------- |
+| [src/cli.ts](src/cli.ts)                                   | The CLI entry point. Uses yargs to define the four commands.  |
+| [src/lib/types.ts](src/lib/types.ts)                       | TypeScript interfaces for the quiz model (`QuizForm`, etc.).  |
+| [src/lib/validation.ts](src/lib/validation.ts)             | Validates parsed YAML before it ever reaches the Google API.  |
+| [src/lib/quiz-file.ts](src/lib/quiz-file.ts)               | Reads, writes, and templates YAML quiz files.                 |
+| [src/lib/google-forms.ts](src/lib/google-forms.ts)         | Converts between the internal quiz model and the Google Forms API. Implements `create`, `download`, `update`. |
+| [src/lib/google-auth.ts](src/lib/google-auth.ts)           | OAuth 2.0 client setup and token caching.                     |
+| [src/lib/deployments.ts](src/lib/deployments.ts)           | Appends a record to `.deployments/deployments.json` after every successful `create`. |
 
----
+### Roles in one paragraph
 
-## 💻 Source Code Files
+`cli.ts` defines the user-facing commands. `quiz-file.ts` handles disk I/O. `validation.ts` enforces the YAML schema. `google-auth.ts` gets a signed-in HTTP client. `google-forms.ts` uses that client to issue Forms / Drive API calls, translating to and from the quiz model. `deployments.ts` writes the local audit log. `types.ts` defines the data types every other file uses.
 
-The application is written in TypeScript. All source files are in `src/`:
+## Tests (in `tests/`)
 
-| File                                               | Lines | Purpose                           |
-| -------------------------------------------------- | ----- | --------------------------------- |
-| [src/cli.ts](src/cli.ts)                           | ~120  | Command-line interface with Yargs |
-| [src/lib/types.ts](src/lib/types.ts)               | ~35   | TypeScript interfaces & types     |
-| [src/lib/validation.ts](src/lib/validation.ts)     | ~100  | YAML validation logic             |
-| [src/lib/quiz-file.ts](src/lib/quiz-file.ts)       | ~45   | YAML file read/write operations   |
-| [src/lib/google-forms.ts](src/lib/google-forms.ts) | ~200  | Google Forms API integration      |
-| [src/lib/google-auth.ts](src/lib/google-auth.ts)   | ~95   | OAuth 2.0 authentication          |
+The project uses [vitest](https://vitest.dev/) for testing. Each source file has a corresponding test file:
 
-**Total source code:** ~595 lines of TypeScript
+| File                                                       | Covers                                |
+| ---------------------------------------------------------- | ------------------------------------- |
+| [tests/cli.test.ts](tests/cli.test.ts)                     | `src/cli.ts`                          |
+| [tests/validation.test.ts](tests/validation.test.ts)       | `src/lib/validation.ts`               |
+| [tests/quiz-file.test.ts](tests/quiz-file.test.ts)         | `src/lib/quiz-file.ts`                |
+| [tests/google-forms.test.ts](tests/google-forms.test.ts)   | `src/lib/google-forms.ts`             |
+| [tests/google-auth.test.ts](tests/google-auth.test.ts)     | `src/lib/google-auth.ts`              |
+| [tests/deployments.test.ts](tests/deployments.test.ts)     | `src/lib/deployments.ts`              |
 
-### Source File Descriptions
+Run with `npm test` (or `npm run test:watch`). Coverage reports are written to `coverage/`.
 
-#### [src/cli.ts](src/cli.ts)
+## Configuration
 
-The main CLI entry point using Yargs framework.
+| File                                       | Purpose                                                        |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| [package.json](package.json)               | Dependencies, npm scripts, `bin` entry, project metadata.      |
+| [tsconfig.json](tsconfig.json)             | TypeScript compiler settings.                                  |
+| [.env.example](.env.example)               | Template for environment overrides (copy to `.env` if needed). |
+| [.gitignore](.gitignore)                   | Lists files Git should ignore (credentials, tokens, builds).   |
 
-- Defines 4 commands: `init-template`, `create`, `download`, `update`
-- Handles command-line arguments and options
-- Calls library functions to perform actions
+### `package.json` highlights
 
-#### [src/lib/types.ts](src/lib/types.ts)
+- `npm run build` — compile TypeScript to `dist/`.
+- `npm run dev -- <cmd>` — run the source directly via `tsx`.
+- `npm run start -- <cmd>` — run the compiled JavaScript.
+- `npm run lint` — run eslint.
+- `npm test` / `npm run test:watch` — run vitest.
 
-TypeScript interfaces defining the quiz data model.
+### `.gitignore` excludes
 
-- `QuizForm` - Main form structure
-- `QuizQuestion` - Individual question
-- `QuizOption` - Answer option
-- `QuizQuestionType` - Question type union
+- `node_modules/`, `dist/` — generated content.
+- `.env` — local overrides.
+- `credentials.json`, `tokens/` — Google secrets.
+- `.deployments/` — local form deployment log.
+- `quizzes/` — your private quiz YAMLs (the project uses this convention; feel free to track yours elsewhere).
+- `*.log`.
 
-#### [src/lib/validation.ts](src/lib/validation.ts)
+## Generated folders
 
-Validates YAML quiz files before uploading.
+| Folder                | Created by         | Description                                                                |
+| --------------------- | ------------------ | -------------------------------------------------------------------------- |
+| `node_modules/`       | `npm install`      | Installed dependencies. Excluded from Git.                                 |
+| `dist/`               | `npm run build`    | Compiled JavaScript output. Excluded from Git.                             |
+| `tokens/`             | First `create`     | Cached OAuth token. Excluded from Git.                                     |
+| `.deployments/`       | First `create`     | JSON log of every form created via the tool. Excluded from Git.             |
+| `coverage/`           | `npm test`         | Test coverage report. Safe to delete.                                      |
 
-- Checks version, title, questions
-- Validates question types and required fields
-- Validates choice questions have 2+ options
-- Validates text vs choice question fields
-- Provides detailed error messages
+## Examples and templates
 
-#### [src/lib/quiz-file.ts](src/lib/quiz-file.ts)
+| File                                                 | Description                                                                  |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [examples/sample-quiz.yaml](examples/sample-quiz.yaml) | A reference quiz with one of each question type. Useful starting point.    |
+| `quizzes/`                                           | Convention: put your private quiz YAMLs here. The folder is in `.gitignore`. |
 
-Handles YAML file I/O operations.
-
-- `readQuizFile()` - Parse YAML to JavaScript object
-- `writeQuizFile()` - Write JavaScript object as YAML
-- `buildTemplateQuizFile()` - Generate template quiz
-- Uses `js-yaml` library for YAML handling
-
-#### [src/lib/google-forms.ts](src/lib/google-forms.ts)
-
-Google Forms API integration layer.
-
-- Converts quiz YAML ↔ Google Forms API format
-- `downloadFormAsQuizFile()` - Download form to YAML
-- `createGoogleFormFromQuiz()` - Create new form
-- `updateGoogleFormFromQuiz()` - Update existing form
-- Maps question types (single_choice → RADIO, etc.)
-- Handles answer keys and grading
-
-#### [src/lib/google-auth.ts](src/lib/google-auth.ts)
-
-OAuth 2.0 authentication with Google.
-
-- `getAuthorizedClient()` - Get authenticated OAuth client
-- Handles local browser-based OAuth flow
-- Saves tokens to local file
-- Loads saved tokens for subsequent runs
-- Respects `GOOGLE_CREDENTIALS_PATH` and `GOOGLE_TOKEN_PATH` env vars
-
----
-
-## ⚙️ Configuration Files
-
-| File                           | Purpose                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| [package.json](package.json)   | Dependencies, scripts, project metadata              |
-| [tsconfig.json](tsconfig.json) | TypeScript compiler configuration                    |
-| [.gitignore](.gitignore)       | Git ignore rules (credentials, tokens, node_modules) |
-| [.env.example](.env.example)   | Environment variable template                        |
-
-### [package.json](package.json)
-
-Defines:
-
-- **name**: `google-forms-quiz-tool`
-- **version**: `1.0.0`
-- **scripts**:
-  - `npm run build` - Compile TypeScript
-  - `npm run dev` - Run with tsx (development)
-  - `npm run start` - Run compiled JavaScript
-  - `npm run lint` - Run ESLint
-- **dependencies**: Google APIs, OAuth, Yargs, YAML parser
-- **devDependencies**: TypeScript, type definitions, ESLint
-
-### [tsconfig.json](tsconfig.json)
-
-TypeScript compiler options:
-
-- Targets ES2020
-- Module: ESNext
-- Strict mode enabled
-- CommonJS interop
-- Resolves Node.js modules
-
-### [.env.example](.env.example)
-
-Template for environment variables:
-
-- `GOOGLE_CREDENTIALS_PATH` - Path to credentials.json
-- `GOOGLE_TOKEN_PATH` - Path to OAuth token file
-
-### [.gitignore](.gitignore)
-
-Prevents accidentally committing:
-
-- `node_modules/` - Dependencies
-- `dist/` - Compiled output
-- `.env` - Environment secrets
-- `credentials.json` - Google OAuth credentials
-- `tokens/` - Saved OAuth tokens
-- `*.log` - Log files
-
----
-
-## 📦 Generated Files
-
-These are created automatically by the build process:
-
-### [dist/](dist/)
-
-Compiled JavaScript output:
-
-- `dist/cli.js` - Compiled CLI
-- `dist/lib/` - Compiled library files
-
-Generated by: `npm run build`
-
-### [node_modules/](node_modules/)
-
-Third-party dependencies installed by npm.
-
-Generated by: `npm install`
-
-Excluded from git via `.gitignore`
-
----
-
-## 📋 Example Files
-
-### [examples/sample-quiz.yaml](examples/sample-quiz.yaml)
-
-Working example quiz demonstrating all question types:
-
-- Single choice question
-- Multiple choice question
-- Dropdown question
-- Short text question
-- Long text question
-
-Can be used as reference or starting point.
-
----
-
-## 🔧 Development & Build
-
-### Build Process
+## Build & development at a glance
 
 ```bash
+# install once
+npm install
+
+# develop (no build step needed)
+npm run dev -- <command> [options]
+
+# production build
 npm run build
-```
+npm run start -- <command> [options]
 
-Runs: `tsc -p tsconfig.json`
-
-- Compiles `src/**/*.ts` to `dist/**/*.js`
-- Generates `.d.ts` type declaration files
-- Respects `tsconfig.json` settings
-
-### Development Mode
-
-```bash
-npm run dev -- <command>
-```
-
-Runs: `tsx src/cli.ts <command>`
-
-- Uses `tsx` to run TypeScript directly
-- No build step needed
-- Fast for development iteration
-
-### Production Mode
-
-```bash
-npm run start -- <command>
-```
-
-Runs: `node dist/cli.js <command>`
-
-- Uses pre-compiled JavaScript
-- Faster than dev mode
-- No TypeScript compilation needed
-
-### Linting
-
-```bash
+# tests and lint
+npm test
 npm run lint
 ```
 
-Runs: `eslint .`
+## Where everything fits together
 
-- Checks code style
-- Finds potential errors
-- Configured in ESLint config
-
----
-
-## 📁 Directory Structure
-
-```
+```text
 quiz-generator/
 │
-├── 📄 Documentation Files
-├── README.md                   Main overview
-├── GETTING_STARTED.md          ← START HERE
-├── QUICKSTART.md               5-minute setup
-├── GOOGLE_SETUP.md             OAuth setup
-├── YAML_FORMAT.md              Format spec
-├── EXAMPLES.md                 Sample quizzes
-├── ADVANCED.md                 Advanced usage
-├── INDEX.md                    Documentation index
-├── PROJECT_SUMMARY.md          Project overview
-├── CHANGELOG.md                Version history
-├── FILE_GUIDE.md              This file
+├── README.md, GETTING_STARTED.md, QUICKSTART.md ...    ← documentation
 │
-├── 💻 Source Code
 ├── src/
-│   ├── cli.ts                 CLI commands
+│   ├── cli.ts
 │   └── lib/
-│       ├── types.ts           Data types
-│       ├── validation.ts      Input validation
-│       ├── quiz-file.ts       YAML I/O
-│       ├── google-forms.ts    Google Forms API
-│       └── google-auth.ts     OAuth authentication
+│       ├── types.ts
+│       ├── validation.ts
+│       ├── quiz-file.ts
+│       ├── google-forms.ts
+│       ├── google-auth.ts
+│       └── deployments.ts
 │
-├── 📦 Generated (Build Output)
-├── dist/                       Compiled JavaScript
-│   ├── cli.js
-│   └── lib/
-│       ├── types.js
-│       ├── validation.js
-│       ├── quiz-file.js
-│       ├── google-forms.js
-│       └── google-auth.js
+├── tests/                ← vitest suite
+├── examples/             ← sample quiz YAML
+├── dist/                 ← generated by build
+├── coverage/             ← generated by tests
+├── node_modules/         ← installed deps
 │
-├── 📚 Examples
-├── examples/
-│   └── sample-quiz.yaml       Sample quiz
-│
-├── ⚙️ Configuration
-├── package.json               Dependencies & scripts
-├── package-lock.json          Locked dependency versions
-├── tsconfig.json              TypeScript config
-├── .env.example               Environment template
-└── .gitignore                 Git ignore rules
+├── credentials.json      ← (you provide) — Google OAuth client
+├── tokens/               ← (auto-created) — cached OAuth token
+├── .deployments/         ← (auto-created) — local deployment log
+├── .env                  ← (optional) — env-var overrides
+├── .env.example
+├── .gitignore
+├── package.json
+└── tsconfig.json
 ```
 
----
+## Where to look for…
 
-## 🚀 Usage Paths
-
-### For First-Time Users
-
-1. Read: [GETTING_STARTED.md](GETTING_STARTED.md)
-2. Setup: [GOOGLE_SETUP.md](GOOGLE_SETUP.md)
-3. Learn: [QUICKSTART.md](QUICKSTART.md)
-4. Try: `npm run dev -- init-template -o test.yaml`
-
-### For Quiz Creation
-
-1. Reference: [YAML_FORMAT.md](YAML_FORMAT.md)
-2. Examples: [EXAMPLES.md](EXAMPLES.md)
-3. Create: Edit `.yaml` file
-4. Upload: `npm run dev -- create --input file.yaml`
-
-### For Power Users
-
-1. Advanced: [ADVANCED.md](ADVANCED.md)
-2. Scripts: See scripting patterns
-3. CI/CD: See integration examples
-4. Extend: Modify source files
-
-### For Troubleshooting
-
-1. Common issues: [README.md](README.md#troubleshooting)
-2. Setup help: [GOOGLE_SETUP.md](GOOGLE_SETUP.md#troubleshooting)
-3. Format errors: [YAML_FORMAT.md](YAML_FORMAT.md#validation-rules)
-4. Advanced help: [ADVANCED.md](ADVANCED.md#error-handling-and-debugging)
-
----
-
-## 📊 Project Stats
-
-| Metric              | Count        |
-| ------------------- | ------------ |
-| TypeScript Files    | 6            |
-| Documentation Files | 10           |
-| Total Lines of Code | ~600         |
-| Total Lines of Docs | 2,300+       |
-| Example Files       | 1            |
-| Commands Supported  | 4            |
-| Question Types      | 5            |
-| Supported APIs      | Google Forms |
-
----
-
-## 🔑 Key Files Summary
-
-| What You Want           | Read This                                          |
-| ----------------------- | -------------------------------------------------- |
-| Get started immediately | [GETTING_STARTED.md](GETTING_STARTED.md)           |
-| 5-minute setup          | [QUICKSTART.md](QUICKSTART.md)                     |
-| Project overview        | [README.md](README.md)                             |
-| Complete YAML spec      | [YAML_FORMAT.md](YAML_FORMAT.md)                   |
-| Real examples           | [EXAMPLES.md](EXAMPLES.md)                         |
-| Google setup help       | [GOOGLE_SETUP.md](GOOGLE_SETUP.md)                 |
-| Advanced usage          | [ADVANCED.md](ADVANCED.md)                         |
-| Find something          | [INDEX.md](INDEX.md)                               |
-| Full project details    | [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)           |
-| CLI source              | [src/cli.ts](src/cli.ts)                           |
-| Google API code         | [src/lib/google-forms.ts](src/lib/google-forms.ts) |
-| YAML validation         | [src/lib/validation.ts](src/lib/validation.ts)     |
-
----
-
-## ✅ Verification Checklist
-
-All project files are present and accounted for:
-
-- [x] Source code in `src/`
-- [x] Configuration files (package.json, tsconfig.json, .env.example)
-- [x] Documentation (10 markdown files)
-- [x] Examples (sample-quiz.yaml)
-- [x] Build output (dist/ - auto-generated)
-- [x] Dependencies (node_modules/ - auto-generated)
-
-You're ready to use the tool!
+| What                              | Where                                                                |
+| --------------------------------- | -------------------------------------------------------------------- |
+| Command definitions               | [src/cli.ts](src/cli.ts)                                             |
+| The Google Forms API translation  | [src/lib/google-forms.ts](src/lib/google-forms.ts)                   |
+| YAML validation rules             | [src/lib/validation.ts](src/lib/validation.ts) (+ [YAML_FORMAT.md](YAML_FORMAT.md)) |
+| OAuth setup                       | [src/lib/google-auth.ts](src/lib/google-auth.ts) (+ [GOOGLE_SETUP.md](GOOGLE_SETUP.md)) |
+| Deployment log behaviour          | [src/lib/deployments.ts](src/lib/deployments.ts)                     |
+| Tests for any of the above        | `tests/<same-name>.test.ts`                                          |

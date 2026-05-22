@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 import yaml from "js-yaml";
 import { QuizForm } from "./types.js";
 import { validateQuizForm } from "./validation.js";
@@ -10,7 +11,7 @@ export async function readQuizFile(path: string): Promise<QuizForm> {
 }
 
 export async function writeQuizFile(
-  path: string,
+  filePath: string,
   data: QuizForm,
 ): Promise<void> {
   const output = yaml.dump(data, {
@@ -19,7 +20,8 @@ export async function writeQuizFile(
     sortKeys: false,
   });
 
-  await fs.writeFile(path, output, "utf8");
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(filePath, output, "utf8");
 }
 
 export function buildTemplateQuizFile(): QuizForm {

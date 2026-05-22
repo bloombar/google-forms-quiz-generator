@@ -1,70 +1,78 @@
 # Google Forms Quiz Tool
 
-A TypeScript CLI to manage Google Forms quizzes using simple YAML files. **Create, download, and update** quizzes from the command line.
+A small command-line tool that lets you write Google Forms quizzes in a plain text file (YAML) and upload them to Google Forms with a single command. You can also download existing forms and edit them locally.
 
-## What It Does
+If you've ever wanted to keep a quiz under version control, share it as a file with a colleague, or generate many similar quizzes from a script — this is for you.
 
-✅ **Create** new Google Forms quizzes from YAML files  
-✅ **Download** existing forms to YAML for editing  
-✅ **Update** forms with changes from YAML  
-✅ **Support** all major question types (choice, dropdown, text)  
-✅ **Define** answer keys and auto-grading points
+## What it does
 
-## Quick Start
+- **Create** new Google Forms quizzes from a YAML file.
+- **Download** an existing form and save it as YAML so you can edit it in any text editor.
+- **Update** a form by replacing its questions with the contents of your YAML.
+- Supports five question types: single-choice, multiple-choice, dropdown, short text, and long text.
+- Supports answer keys, point values, and auto-grading.
 
-🎯 **New here?** Start with [**GETTING_STARTED.md**](GETTING_STARTED.md)
+## Who this is for
+
+You **don't** need to be a developer to use this tool. You do need to be willing to:
+
+1. Install Node.js (about 5 minutes).
+2. Click through a one-time Google setup to give the tool permission to manage your forms (about 15-20 minutes).
+3. Edit a text file. If you've ever written a recipe or a configuration file, you can write a quiz.
+
+---
+
+## Getting started — read these in order
+
+1. **[QUICKSTART.md](QUICKSTART.md)** — Install, connect to Google, and create your first form. Aim for 30 minutes the first time.
+2. **[GOOGLE_SETUP.md](GOOGLE_SETUP.md)** — Step-by-step walkthrough of the Google Cloud Console setup, written for people who have never touched it before.
+3. **[YAML_FORMAT.md](YAML_FORMAT.md)** — Every field you can use in a quiz file, with examples.
+4. **[EXAMPLES.md](EXAMPLES.md)** — Ready-to-copy quizzes for different scenarios (math, language, training, classroom assessment, survey).
+5. **[ADVANCED.md](ADVANCED.md)** — Scripting, automation, CI/CD, environment variables, and tips for power users.
+
+If you ever feel lost, [INDEX.md](INDEX.md) is a topic-by-topic map of all documentation.
+
+---
+
+## At a glance
+
+### Install
 
 ```bash
-# 1. Install
 npm install
+```
 
-# 2. Set up Google credentials (see GOOGLE_SETUP.md)
-# Download credentials.json from Google Cloud and save to project root
+### One-time Google setup
 
-# 3. Create your first quiz
+Follow [GOOGLE_SETUP.md](GOOGLE_SETUP.md) to create a `credentials.json` file and save it to the project root.
+
+### Commands
+
+| Command         | What it does                                                |
+| --------------- | ----------------------------------------------------------- |
+| `init-template` | Write a starter quiz YAML file you can edit.                |
+| `create`        | Upload a YAML file as a brand-new Google Form.              |
+| `download`      | Save an existing Google Form to a YAML file.                |
+| `update`        | Replace the questions in an existing Google Form from YAML. |
+
+Each command is run via `npm run dev --` followed by the command name. For example:
+
+```bash
 npm run dev -- init-template -o quiz.yaml
 npm run dev -- create --input quiz.yaml
+npm run dev -- create --input quiz.yaml --folder-id 1AbCdEfGhIjKlMnOp
+npm run dev -- download --form-id 1a2b3c4d... --output quiz.yaml
+npm run dev -- update --form-id 1a2b3c4d... --input quiz.yaml
 ```
 
-For step-by-step guide, see [**QUICKSTART.md**](QUICKSTART.md) (5 minutes)
+After `create`, the tool prints the new form's ID and a Responder URL (the link you share with quiz-takers). It also appends a record to `.deployments/deployments.json` so you have a local log of every form you've created.
 
-## Command Reference
-
-| Command         | Purpose                                        |
-| --------------- | ---------------------------------------------- |
-| `init-template` | Generate a starter YAML template               |
-| `create`        | Create a new Google Form from YAML             |
-| `download`      | Download a Google Form as YAML                 |
-| `update`        | Replace an existing form's questions with YAML |
-
-### Examples
-
-```bash
-# Create template
-npm run dev -- init-template --output quiz.yaml
-
-# Create a form
-npm run dev -- create --input quiz.yaml
-# Output: Created form ID: 1a2b3c4d5e6f7g8h9i0j
-
-# Create a form in a specific Drive folder (optional)
-npm run dev -- create --input quiz.yaml --folder-id YOUR_DRIVE_FOLDER_ID
-
-# Download a form
-npm run dev -- download --form-id 1a2b3c4d5e6f7g8h9i0j --output quiz.yaml
-
-# Update a form
-npm run dev -- update --form-id 1a2b3c4d5e6f7g8h9i0j --input quiz.yaml
-```
-
-## YAML Format
-
-Questions are defined in a simple YAML structure:
+### A minimal YAML file
 
 ```yaml
 version: 1
-title: Sample Quiz
-description: Optional description
+title: My First Quiz
+description: A short description shown to respondents.
 isQuiz: true
 questions:
   - title: What is 2 + 2?
@@ -77,7 +85,7 @@ questions:
         isCorrect: true
       - value: "5"
 
-  - title: Select all prime numbers
+  - title: Select all prime numbers.
     type: multiple_choice
     points: 2
     options:
@@ -87,117 +95,115 @@ questions:
         isCorrect: true
       - value: "4"
 
-  - title: One word: largest ocean on Earth
+  - title: One word — the largest ocean on Earth.
     type: short_text
     correctAnswers:
       - Pacific
 ```
 
-**Supported question types:**
+See [YAML_FORMAT.md](YAML_FORMAT.md) for the complete reference.
 
-- `single_choice` - radio buttons
-- `multiple_choice` - checkboxes
-- `dropdown` - dropdown list
-- `short_text` - single line input
-- `long_text` - multi-line input
+### Question types
 
-See [**YAML_FORMAT.md**](YAML_FORMAT.md) for complete specification and all fields.
+| Type              | What respondents see                          |
+| ----------------- | --------------------------------------------- |
+| `single_choice`   | Radio buttons — pick exactly one option.      |
+| `multiple_choice` | Checkboxes — pick any number of options.      |
+| `dropdown`        | A dropdown menu — pick one option.            |
+| `short_text`      | A single-line text box.                       |
+| `long_text`       | A multi-line text area (for longer answers).  |
 
-## Documentation
+---
 
-| Document                           | Content                     |
-| ---------------------------------- | --------------------------- |
-| [QUICKSTART.md](QUICKSTART.md)     | 5-minute setup guide        |
-| [GOOGLE_SETUP.md](GOOGLE_SETUP.md) | Detailed Google Cloud setup |
-| [YAML_FORMAT.md](YAML_FORMAT.md)   | Complete YAML specification |
-| [EXAMPLES.md](EXAMPLES.md)         | Real-world example quizzes  |
+## Common workflows
 
-## Setup
-
-### 1. Install Dependencies
+### Make a brand-new quiz
 
 ```bash
-npm install
+npm run dev -- init-template -o quiz.yaml   # create a starter file
+# open quiz.yaml in your editor, change the title and questions
+npm run dev -- create --input quiz.yaml     # upload to Google Forms
+# share the printed Responder URL with quiz-takers
 ```
 
-### 2. Configure Google Credentials
-
-Follow [GOOGLE_SETUP.md](GOOGLE_SETUP.md) to:
-
-1. Create a Google Cloud project
-2. Enable Google Forms API
-3. Create OAuth credentials
-4. Download `credentials.json` to project root
-
-### 3. Build (optional)
+### Edit a quiz you already created
 
 ```bash
-npm run build
-npm run start -- <command>
+npm run dev -- download --form-id YOUR_FORM_ID -o quiz.yaml
+# edit quiz.yaml
+npm run dev -- update --form-id YOUR_FORM_ID --input quiz.yaml
 ```
 
-Or use `npm run dev -- <command>` to run directly.
+### Make a duplicate of an existing quiz
+
+```bash
+npm run dev -- download --form-id SOURCE_FORM_ID -o quiz.yaml
+# change the title in quiz.yaml
+npm run dev -- create --input quiz.yaml     # creates a NEW form
+```
+
+### Put new forms into a specific Drive folder
+
+Add `--folder-id` (the part of the Drive folder URL after `folders/`) to the `create` command:
+
+```bash
+npm run dev -- create --input quiz.yaml --folder-id 1AbCdEfGhIjKlMnOp
+```
+
+### Find a form's ID
+
+Open the form in Google Forms. The URL looks like:
+
+```text
+https://docs.google.com/forms/d/THIS_IS_THE_FORM_ID/edit
+```
+
+Copy the string between `/d/` and `/edit`.
+
+---
 
 ## Development
 
+For contributors, or if you want to build the tool from source:
+
 ```bash
-npm run build        # Compile TypeScript
-npm run dev -- --help   # Show commands
-npm run lint         # Run eslint
+npm run build            # compile TypeScript to dist/
+npm run start -- --help  # run the compiled version
+npm run dev -- --help    # run directly from TypeScript (no build needed)
+npm run lint             # run eslint
+npm test                 # run the test suite (vitest)
+npm run test:watch       # run tests in watch mode
 ```
+
+The test suite covers the YAML parser, validator, Google Forms API mapping, OAuth flow, deployment tracking, and CLI commands.
+
+---
 
 ## Limitations
 
-- **Non-question blocks**: Images, videos, sections are skipped when downloading
-- **Update scope**: The `update` command replaces ALL questions; it doesn't merge
-- **Advanced features**: Form styling, logic branching, and custom themes are not supported
-- **Text auto-grading**: Text question answer keys are for reference; Google Forms requires manual review for exact matching
+This tool deliberately focuses on quiz content. It does **not** manage:
 
-## Examples
+- Images, videos, or rich media in questions. Download skips non-question items.
+- Page sections, conditional branching, or "go to section based on answer."
+- Form styling (colours, fonts, header images, themes).
+- Response data — viewing submissions, analytics, exports.
+- Text question grading is best-effort: Google Forms only auto-grades text by exact string match, so very flexible grading still requires manual review.
 
-See [examples/sample-quiz.yaml](examples/sample-quiz.yaml) for a sample quiz.
+The `update` command **replaces all questions** in a form. It does not merge — anything in the form that isn't in your YAML is removed.
 
-More examples in [EXAMPLES.md](EXAMPLES.md):
+---
 
-- Math quizzes
-- Language learning
-- Employee training
-- Classroom assessments
-- Customer surveys
+## Troubleshooting cheat sheet
 
-## Workflows
+| Symptom                                  | Likely cause / fix                                                              |
+| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| `Cannot find credentials`                | You haven't completed [GOOGLE_SETUP.md](GOOGLE_SETUP.md) yet.                   |
+| `OAuth did not return a refresh token`   | Revoke access at <https://myaccount.google.com/permissions> and re-run.         |
+| `YAML validation error: ...`             | See [YAML_FORMAT.md](YAML_FORMAT.md) and check the field mentioned in the error.|
+| `Form created but no questions`          | YAML parsed but had no `questions:` array. Compare to the template.             |
+| `Cannot find form`                       | Form ID is wrong, or your Google account doesn't have edit access to that form. |
 
-### Create a New Quiz
-
-1. `npm run dev -- init-template -o quiz.yaml`
-2. Edit `quiz.yaml` in your text editor
-3. `npm run dev -- create --input quiz.yaml`
-4. Optional: add `--folder-id YOUR_DRIVE_FOLDER_ID` to place the form in a specific Drive folder
-5. Share the responder link from output
-
-### Edit an Existing Quiz
-
-1. `npm run dev -- download --form-id FORM_ID -o quiz.yaml`
-2. Edit `quiz.yaml`
-3. `npm run dev -- update --form-id FORM_ID --input quiz.yaml`
-
-### Duplicate a Quiz
-
-1. `npm run dev -- download --form-id SOURCE_ID -o quiz.yaml`
-2. Edit the title in `quiz.yaml`
-3. `npm run dev -- create --input quiz.yaml`
-
-## Troubleshooting
-
-**"Cannot find credentials"**: Run through [GOOGLE_SETUP.md](GOOGLE_SETUP.md) to create `credentials.json`
-
-**"OAuth refresh token error"**: Revoke app access in [Google Account permissions](https://myaccount.google.com/permissions) and try again
-
-**"YAML validation error"**: Check [YAML_FORMAT.md](YAML_FORMAT.md) for field requirements
-
-**"Form created but no questions"**: Ensure your YAML is valid; test with the template first
-
-See [EXAMPLES.md](EXAMPLES.md) for more use cases and patterns.
+More cases in [GOOGLE_SETUP.md](GOOGLE_SETUP.md#troubleshooting) and [ADVANCED.md](ADVANCED.md#error-handling-and-debugging).
 
 ## License
 

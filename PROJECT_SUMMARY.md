@@ -1,131 +1,135 @@
 # Project Summary
 
-## Overview
+A high-level overview of the Google Forms Quiz Tool — what it is, what it does, and how it's put together.
 
-The **Google Forms Quiz Tool** is a complete CLI application that allows you to manage Google Forms quizzes using simple YAML files. You can create, download, and update quizzes entirely from the command line.
+## What this is
 
-## What's Been Completed
+The Google Forms Quiz Tool is a small command-line application that lets you manage Google Forms quizzes using plain-text YAML files. You can create, download, and update quizzes entirely from your terminal — no clicking through the Forms web UI required.
 
-### ✅ Core Application
+The use cases that motivate it:
 
-- **TypeScript CLI** with a clean, intuitive command-line interface
-- **YAML parser/serializer** for quiz file management
-- **Google Forms API integration** with OAuth 2.0 authentication
-- **Full round-trip support**: Download forms → Edit YAML → Upload back to Google Forms
+- **Version control for quizzes**: store quiz YAMLs in Git alongside other course or training materials.
+- **Bulk authoring**: write or generate many quizzes from data, then upload them in one go.
+- **Templating and duplication**: download a form, tweak the YAML, upload as a new form.
+- **Collaboration**: share a YAML file with a colleague the way you'd share any other text document.
 
-### ✅ Supported Features
+## What it supports
 
-- **5 question types**: single choice, multiple choice, dropdown, short text, long text
-- **Answer keys and scoring**: Define correct answers and point values
-- **Question metadata**: Descriptions, required fields, optional text
-- **Quiz settings**: Title, description, quiz vs. survey mode
-- **Validation**: Strict YAML validation before uploading
+### Question types
 
-### ✅ Commands
+| Type              | Renders as in Google Forms                |
+| ----------------- | ----------------------------------------- |
+| `single_choice`   | Radio buttons (one answer)                |
+| `multiple_choice` | Checkboxes (multiple answers)             |
+| `dropdown`        | Dropdown list                             |
+| `short_text`      | Single-line text input                    |
+| `long_text`       | Multi-line text area                      |
 
-1. **`init-template`** - Generate a starter YAML template
-2. **`create`** - Create new Google Forms from YAML files
-3. **`download`** - Download existing forms to YAML for editing
-4. **`update`** - Replace form content with YAML changes
+### Features
 
-### ✅ Documentation (7 files)
+- Correct-answer marking (`isCorrect: true` or `correctAnswers: [...]`).
+- Per-question points for auto-graded scoring.
+- Required vs. optional questions.
+- Per-question descriptions/hints.
+- Quiz mode (with scoring) and survey mode (no scoring).
+- Strict YAML validation before any API call.
+- Optional placement of new forms inside a chosen Drive folder.
+- A local deployment log (`.deployments/deployments.json`) recording every form created via the tool.
 
-| Document                           | Purpose                               |
-| ---------------------------------- | ------------------------------------- |
-| [README.md](README.md)             | Main overview and quick reference     |
-| [QUICKSTART.md](QUICKSTART.md)     | 5-minute setup guide                  |
-| [GOOGLE_SETUP.md](GOOGLE_SETUP.md) | Detailed Google Cloud OAuth setup     |
-| [YAML_FORMAT.md](YAML_FORMAT.md)   | Complete YAML specification           |
-| [EXAMPLES.md](EXAMPLES.md)         | Real-world quiz examples and patterns |
-| [ADVANCED.md](ADVANCED.md)         | Scripting, CI/CD, advanced usage      |
-| [INDEX.md](INDEX.md)               | Documentation navigation              |
+### Commands
 
-### ✅ Project Structure
+| Command         | What it does                                              |
+| --------------- | --------------------------------------------------------- |
+| `init-template` | Write a starter YAML quiz file you can edit.              |
+| `create`        | Upload a YAML as a brand-new Google Form.                 |
+| `download`      | Save an existing Google Form to a YAML file.              |
+| `update`        | Replace all questions in an existing form from YAML.      |
 
-```
-quiz-generator/
-├── src/
-│   ├── cli.ts                  # CLI command definitions
-│   └── lib/
-│       ├── types.ts            # TypeScript interfaces
-│       ├── validation.ts       # YAML validation logic
-│       ├── quiz-file.ts        # YAML I/O operations
-│       ├── google-forms.ts     # Google Forms API layer
-│       └── google-auth.ts      # OAuth authentication
-├── examples/
-│   └── sample-quiz.yaml        # Example quiz file
-├── dist/                        # Compiled JavaScript
-├── package.json                # Dependencies and build scripts
-├── tsconfig.json               # TypeScript configuration
-├── .env.example                # Environment template
-└── Documentation files...
-```
+## What it deliberately does not do
 
-### ✅ Build & Development
+- No form styling (colours, fonts, header images).
+- No page sections or conditional branching ("if you answered X, go to question Y").
+- No rich media — images and videos are not managed (they're skipped on download).
+- No response data — viewing or exporting submissions.
+- Text auto-grading is exact-match only (a Google Forms limitation, not ours).
 
-- **TypeScript compilation**: `npm run build`
-- **Development mode**: `npm run dev -- <command>`
-- **Production mode**: `npm run start -- <command>`
-- **Linting**: `npm run lint`
-- **Dependencies**: TypeScript, Yargs, Google APIs, js-yaml, OAuth2
+These omissions are deliberate: the tool focuses on quiz **content** so the YAML stays portable and easy to diff.
 
-## User Setup Steps
+## How it's structured
 
-### 1. Installation & Dependencies
+### Source layout
 
-```bash
-npm install
+```text
+src/
+├── cli.ts                  CLI entry point (yargs-based)
+└── lib/
+    ├── types.ts            Quiz model TypeScript interfaces
+    ├── validation.ts       Pre-upload YAML validation
+    ├── quiz-file.ts        YAML read/write/template
+    ├── google-forms.ts     Translation between quiz model ⇄ Google Forms API
+    ├── google-auth.ts      OAuth 2.0 flow and token caching
+    └── deployments.ts      Appends to .deployments/deployments.json
+tests/                      vitest suite (mirrors src/)
+examples/sample-quiz.yaml   Reference quiz with one of each question type
 ```
 
-### 2. Google Cloud Configuration (Manual)
+### Technology stack
 
-Users must:
+- **Runtime**: Node.js 18+.
+- **Language**: TypeScript (ESM modules, strict mode).
+- **CLI framework**: yargs.
+- **Google APIs**: `googleapis` v140.
+- **Auth**: `@google-cloud/local-auth` for the local browser OAuth flow.
+- **YAML**: `js-yaml`.
+- **Tests**: vitest with the V8 coverage provider.
+- **Build**: TypeScript compiler (`tsc`).
 
-1. Create a Google Cloud project
-2. Enable Google Forms API
-3. Set up OAuth consent screen
-4. Create desktop app credentials
-5. Save `credentials.json` to project root
+### Authentication model
 
-**See:** [GOOGLE_SETUP.md](GOOGLE_SETUP.md) for detailed step-by-step guide
+The tool uses OAuth 2.0 with Google's "Installed Application" flow:
 
-### 3. Test the Setup
+1. You set up an OAuth client in your own Google Cloud project (one time — see [GOOGLE_SETUP.md](GOOGLE_SETUP.md)).
+2. On first run, the tool opens a browser, you sign in and grant the requested scopes (`forms.body` and `drive.file`).
+3. A refresh token is cached locally to `tokens/google-oauth.json` for future runs.
 
-```bash
-npm run dev -- init-template -o test.yaml
-npm run dev -- create --input test.yaml
-```
+No part of the auth flow involves a third-party server. The token is yours, on your machine, and you can revoke it at any time via your Google account settings.
 
-This creates a sample Google Form confirming everything works.
+## Setup overview (full details in [GOOGLE_SETUP.md](GOOGLE_SETUP.md))
 
-## Usage Examples
+1. **Install Node.js 18+** and run `npm install`.
+2. **Create a free Google Cloud project**, enable the Forms API, and download an OAuth client credentials file (`credentials.json`).
+3. **Save** `credentials.json` to the project root.
+4. **Run any command** — the first run will pop up a browser to authorise the tool.
 
-### Create a New Quiz
+## Usage examples
+
+### Create from scratch
 
 ```bash
 npm run dev -- init-template -o quiz.yaml
-# Edit quiz.yaml
+# edit quiz.yaml
 npm run dev -- create --input quiz.yaml
-# Returns: Created form ID: 1a2b3c4d5e6f7g8h9i0j
+# prints: Created form ID: 1a2b3c4d...
+#         Responder URL: https://...
 ```
 
-### Download & Modify Existing Form
+### Edit an existing form
 
 ```bash
-npm run dev -- download --form-id 1a2b3c4d5e6f7g8h9i0j -o quiz.yaml
-# Edit quiz.yaml
-npm run dev -- update --form-id 1a2b3c4d5e6f7g8h9i0j --input quiz.yaml
+npm run dev -- download --form-id 1a2b3c4d... -o quiz.yaml
+# edit quiz.yaml
+npm run dev -- update --form-id 1a2b3c4d... --input quiz.yaml
 ```
 
-### YAML Format Example
+### Minimal YAML
 
 ```yaml
 version: 1
-title: "My Quiz"
-description: "Sample description"
+title: My Quiz
+description: A short description.
 isQuiz: true
 questions:
-  - title: "What is 2+2?"
+  - title: What is 2 + 2?
     type: single_choice
     points: 1
     required: true
@@ -136,212 +140,43 @@ questions:
       - value: "5"
 ```
 
-## Key Features
-
-### 🎯 Supported Question Types
-
-1. **single_choice** - Radio buttons
-2. **multiple_choice** - Checkboxes
-3. **dropdown** - List selector
-4. **short_text** - One-line input
-5. **long_text** - Multi-line input
-
-### 🔐 Security
-
-- OAuth 2.0 with local auth flow
-- Credentials stored in `tokens/` directory
-- Credentials never committed to git
-- Sensitive files in `.gitignore`
-
-### ⚙️ Customizable
-
-- Environment variables for credential paths
-- Command-line options with short/long forms
-- Extensible architecture for future features
-
-## What's NOT Included
-
-❌ **Form styling** (colors, fonts, themes)  
-❌ **Form sections** (grouping questions)  
-❌ **Images/videos** (rich media)  
-❌ **Form responses** (viewing submissions)  
-❌ **Logic branching** (conditional questions)  
-❌ **Advanced form features** (time limits, progress bar)
-
-These are by design—the tool focuses on quiz content management via simple text files.
-
-## Commands Quick Reference
+## Build and run modes
 
 ```bash
-# Create template
-npm run dev -- init-template --output quiz.yaml
-
-# Create form from YAML
-npm run dev -- create --input quiz.yaml
-
-# Download form to YAML
-npm run dev -- download --form-id FORM_ID --output quiz.yaml
-
-# Update form from YAML
-npm run dev -- update --form-id FORM_ID --input quiz.yaml
-
-# Show help
-npm run dev -- --help
+npm run dev -- <command>     # dev mode (runs TS directly via tsx)
+npm run build                # compile to dist/
+npm run start -- <command>   # production mode (runs compiled JS)
+npm run lint                 # lint with eslint
+npm test                     # run the test suite
+npm run test:watch           # tests in watch mode
 ```
 
-## Technology Stack
+When installed via npm, the binary is `quiz-tool` (declared in `package.json`'s `bin` field).
 
-- **Runtime**: Node.js 16+
-- **Language**: TypeScript 5.8
-- **CLI Framework**: Yargs
-- **Google APIs**: `googleapis` v140+
-- **Authentication**: `@google-cloud/local-auth`
-- **Data Format**: YAML (js-yaml)
-- **Build Tool**: TypeScript compiler (tsc)
+## Security and privacy
 
-## Project Files
+- `credentials.json`, `tokens/google-oauth.json`, and `.deployments/` are all in `.gitignore`.
+- The OAuth scopes requested are scoped to forms and to drive files **the tool itself creates** — it cannot read your wider Drive or other Google data.
+- Authentication happens locally between your browser and Google; no third-party server is involved.
 
-### Core Application
+## Documentation overview
 
-- `src/cli.ts` (118 lines) - CLI commands
-- `src/lib/types.ts` (33 lines) - TypeScript types
-- `src/lib/validation.ts` (100+ lines) - YAML validation
-- `src/lib/quiz-file.ts` (43 lines) - YAML I/O
-- `src/lib/google-forms.ts` (200+ lines) - Google Forms API
-- `src/lib/google-auth.ts` (95 lines) - OAuth authentication
+| File                                                | Audience / purpose                              |
+| --------------------------------------------------- | ----------------------------------------------- |
+| [README.md](README.md)                              | First-stop overview and command reference.     |
+| [GETTING_STARTED.md](GETTING_STARTED.md)            | One-page friendly orientation.                  |
+| [QUICKSTART.md](QUICKSTART.md)                      | Step-by-step first-run tutorial.               |
+| [GOOGLE_SETUP.md](GOOGLE_SETUP.md)                  | Beginner-friendly Google Cloud walkthrough.    |
+| [MANUAL_SETUP.md](MANUAL_SETUP.md)                  | One-page setup checklist.                       |
+| [YAML_FORMAT.md](YAML_FORMAT.md)                    | Complete YAML field reference.                  |
+| [EXAMPLES.md](EXAMPLES.md)                          | Ready-to-copy example quizzes.                  |
+| [ADVANCED.md](ADVANCED.md)                          | Scripting, CI/CD, environment, deployment log. |
+| [INDEX.md](INDEX.md)                                | Topic-by-topic doc map.                         |
+| [FILE_GUIDE.md](FILE_GUIDE.md)                      | Project file reference.                         |
+| [CHANGELOG.md](CHANGELOG.md)                        | Release history.                                |
 
-### Configuration
+## Future direction
 
-- `package.json` - Dependencies and scripts
-- `tsconfig.json` - TypeScript configuration
-- `.env.example` - Environment template
-- `.gitignore` - Git ignore rules
+Planned enhancements are tracked in [CHANGELOG.md](CHANGELOG.md#planned). High-priority items include a `--dry-run` flag, JSON/CSV import, and a non-destructive update mode.
 
-### Documentation
-
-- `README.md` - Main overview (120 lines)
-- `QUICKSTART.md` - 5-minute setup (100 lines)
-- `GOOGLE_SETUP.md` - Google Cloud setup (250+ lines)
-- `YAML_FORMAT.md` - YAML specification (350+ lines)
-- `EXAMPLES.md` - Example quizzes (300+ lines)
-- `ADVANCED.md` - Advanced usage (350+ lines)
-- `INDEX.md` - Documentation index
-
-### Examples
-
-- `examples/sample-quiz.yaml` - Working example quiz
-
-## Deployment Options
-
-### Local Development
-
-```bash
-npm run dev -- <command>
-```
-
-### Compiled Binary
-
-```bash
-npm run build
-npm run start -- <command>
-```
-
-### Node Package (npm publish)
-
-The package.json is set up for publishing:
-
-```json
-{
-  "name": "google-forms-quiz-tool",
-  "bin": {
-    "quiz-tool": "dist/cli.js"
-  }
-}
-```
-
-Can be installed globally: `npm install -g google-forms-quiz-tool`
-
-### Docker
-
-Could be containerized for CI/CD pipelines (not included but possible).
-
-## Testing & Validation
-
-### Build Verification
-
-```bash
-npm run build
-# Successfully compiles with no errors
-```
-
-### Template Generation
-
-```bash
-npm run dev -- init-template -o test.yaml
-# Generates valid YAML template
-```
-
-### YAML Validation
-
-All quizzes are validated before upload:
-
-- Version must be 1
-- Title must be non-empty
-- Questions must have valid types
-- Choice questions require 2+ options
-- Text questions cannot have options
-
-## Documentation Quality
-
-The project includes comprehensive documentation:
-
-- **7 markdown files** with 1500+ lines of documentation
-- **Quick start guide** for immediate use
-- **Complete API reference** for YAML format
-- **Real-world examples** for different use cases
-- **Advanced patterns** for power users
-- **Troubleshooting guides** for common issues
-
-## Next Steps for Users
-
-1. **Setup Google Credentials** ([GOOGLE_SETUP.md](GOOGLE_SETUP.md))
-2. **Read Quick Start** ([QUICKSTART.md](QUICKSTART.md))
-3. **Generate First Template** (`npm run dev -- init-template -o quiz.yaml`)
-4. **Create Test Form** (`npm run dev -- create --input quiz.yaml`)
-5. **Explore Examples** ([EXAMPLES.md](EXAMPLES.md))
-
-## Maintenance & Extension
-
-### Code Quality
-
-- TypeScript for type safety
-- Strict validation
-- Error handling with descriptive messages
-- Clean, modular architecture
-
-### Future Enhancement Ideas
-
-- Support for form images/videos
-- Conditional logic support
-- CSV/JSON import/export
-- Web UI for quiz editing
-- Response analytics integration
-- Batch operations for multiple forms
-
-### Extension Points
-
-- Add new question types in `types.ts`
-- Add validation in `validation.ts`
-- Add Google Forms mapping in `google-forms.ts`
-- Add new CLI commands in `cli.ts`
-
-## Summary
-
-✅ **Complete**, production-ready CLI tool
-✅ **Well-documented** with 7 comprehensive guides
-✅ **Type-safe** TypeScript implementation
-✅ **Battle-tested** Google Forms API integration
-✅ **Easy to use** with intuitive commands
-✅ **Extensible** architecture for future features
-
-The tool is ready for immediate use. Users just need to set up Google credentials (manual one-time step) and they can start managing quizzes via YAML files.
+The architecture is deliberately modular so additional question types or features can slot into the existing `validation.ts` / `google-forms.ts` / `types.ts` triad with focused changes.

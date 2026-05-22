@@ -140,33 +140,37 @@ async function getDriveClient(): Promise<drive_v3.Drive> {
   return google.drive({ version: "v3", auth });
 }
 
-async function moveFormToFolder(
+async function syncDriveFileMetadata(
   formId: string,
-  folderId: string,
+  title: string,
+  folderId?: string,
 ): Promise<void> {
   const drive = await getDriveClient();
-  const trimmedFolderId = folderId.trim();
+  const trimmedFolderId = folderId?.trim();
 
-  if (trimmedFolderId.length === 0) {
-    return;
+  const updateRequest: drive_v3.Params$Resource$Files$Update = {
+    fileId: formId,
+    requestBody: {
+      name: title,
+    },
+    fields: "id,name,parents",
+    supportsAllDrives: true,
+  };
+
+  if (trimmedFolderId) {
+    const current = await drive.files.get({
+      fileId: formId,
+      fields: "parents",
+      supportsAllDrives: true,
+    });
+
+    const parentIds = current.data.parents ?? [];
+    updateRequest.addParents = trimmedFolderId;
+    updateRequest.removeParents =
+      parentIds.length > 0 ? parentIds.join(",") : undefined;
   }
 
-  const current = await drive.files.get({
-    fileId: formId,
-    fields: "parents",
-    supportsAllDrives: true,
-  });
-
-  const parentIds = current.data.parents ?? [];
-  const removeParents = parentIds.length > 0 ? parentIds.join(",") : undefined;
-
-  await drive.files.update({
-    fileId: formId,
-    addParents: trimmedFolderId,
-    removeParents,
-    fields: "id,parents",
-    supportsAllDrives: true,
-  });
+  await drive.files.update(updateRequest);
 }
 
 function buildCreateRequests(quiz: QuizForm): forms_v1.Schema$Request[] {
@@ -250,9 +254,7 @@ export async function createGoogleFormFromQuiz(
     requestBody: { requests },
   });
 
-  if (options?.folderId) {
-    await moveFormToFolder(formId, options.folderId);
-  }
+  await syncDriveFileMetadata(formId, quiz.title, options?.folderId);
 
   const created = await forms.forms.get({ formId });
 
@@ -314,6 +316,8 @@ export async function updateGoogleFormFromQuiz(
     formId,
     requestBody: { requests },
   });
+
+  await syncDriveFileMetadata(formId, quiz.title);
 
   const updated = await forms.forms.get({ formId });
 

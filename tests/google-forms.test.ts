@@ -141,6 +141,9 @@ describe("google-forms core functions", () => {
   it("creates a form and applies metadata and questions", async () => {
     formsCreateMock.mockResolvedValue({ data: { formId: "form-123" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-123", name: "Sample Quiz", parents: [] },
+    });
     formsGetMock.mockResolvedValue({
       data: {
         responderUri: "https://example.com/view",
@@ -166,12 +169,23 @@ describe("google-forms core functions", () => {
     };
     expect(batchCall.requestBody.requests.length).toBeGreaterThanOrEqual(3);
     expect(batchCall.requestBody.requests[0]).toHaveProperty("updateFormInfo");
-    expect(googleDriveFactoryMock).not.toHaveBeenCalled();
+    expect(googleDriveFactoryMock).toHaveBeenCalledTimes(1);
+    expect(driveUpdateMock).toHaveBeenCalledWith({
+      fileId: "form-123",
+      requestBody: {
+        name: "Sample Quiz",
+      },
+      fields: "id,name,parents",
+      supportsAllDrives: true,
+    });
   });
 
   it("creates a form with long_text question mapped as paragraph text and no grading", async () => {
     formsCreateMock.mockResolvedValue({ data: { formId: "form-789" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-789", name: "Text Quiz", parents: [] },
+    });
     formsGetMock.mockResolvedValue({
       data: { responderUri: "https://example.com/view" },
     });
@@ -210,6 +224,9 @@ describe("google-forms core functions", () => {
   it("maps multiple_choice and dropdown create question types and allows grading without answers", async () => {
     formsCreateMock.mockResolvedValue({ data: { formId: "form-999" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-999", name: "Mixed Choice Quiz", parents: [] },
+    });
     formsGetMock.mockResolvedValue({
       data: { responderUri: "https://example.com/view" },
     });
@@ -270,6 +287,9 @@ describe("google-forms core functions", () => {
 
     formsCreateMock.mockResolvedValue({ data: { formId: "form-mal" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-mal", name: "Malformed Quiz", parents: [] },
+    });
     formsGetMock.mockResolvedValue({
       data: { responderUri: "https://example.com/view" },
     });
@@ -310,7 +330,7 @@ describe("google-forms core functions", () => {
       data: { parents: ["root", "old-parent"] },
     });
     driveUpdateMock.mockResolvedValue({
-      data: { id: "form-123", parents: ["folder-999"] },
+      data: { id: "form-123", name: "Sample Quiz", parents: ["folder-999"] },
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
@@ -323,16 +343,22 @@ describe("google-forms core functions", () => {
     });
     expect(driveUpdateMock).toHaveBeenCalledWith({
       fileId: "form-123",
+      requestBody: {
+        name: "Sample Quiz",
+      },
       addParents: "folder-999",
       removeParents: "root,old-parent",
-      fields: "id,parents",
+      fields: "id,name,parents",
       supportsAllDrives: true,
     });
   });
 
-  it("skips moving when folderId is blank after trimming", async () => {
+  it("renames the drive file even when folderId is blank after trimming", async () => {
     formsCreateMock.mockResolvedValue({ data: { formId: "form-123" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-123", name: "Sample Quiz", parents: [] },
+    });
     formsGetMock.mockResolvedValue({
       data: { responderUri: "https://example.com/view" },
     });
@@ -342,7 +368,14 @@ describe("google-forms core functions", () => {
 
     expect(googleDriveFactoryMock).toHaveBeenCalledTimes(1);
     expect(driveGetMock).not.toHaveBeenCalled();
-    expect(driveUpdateMock).not.toHaveBeenCalled();
+    expect(driveUpdateMock).toHaveBeenCalledWith({
+      fileId: "form-123",
+      requestBody: {
+        name: "Sample Quiz",
+      },
+      fields: "id,name,parents",
+      supportsAllDrives: true,
+    });
   });
 
   it("moves form and omits removeParents when no existing parents", async () => {
@@ -353,7 +386,7 @@ describe("google-forms core functions", () => {
     });
     driveGetMock.mockResolvedValue({ data: { parents: [] } });
     driveUpdateMock.mockResolvedValue({
-      data: { id: "form-123", parents: ["folder-999"] },
+      data: { id: "form-123", name: "Sample Quiz", parents: ["folder-999"] },
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
@@ -361,9 +394,12 @@ describe("google-forms core functions", () => {
 
     expect(driveUpdateMock).toHaveBeenCalledWith({
       fileId: "form-123",
+      requestBody: {
+        name: "Sample Quiz",
+      },
       addParents: "folder-999",
       removeParents: undefined,
-      fields: "id,parents",
+      fields: "id,name,parents",
       supportsAllDrives: true,
     });
   });
@@ -522,6 +558,9 @@ describe("google-forms core functions", () => {
   it("returns undefined responderUri when create get response has no responderUri", async () => {
     formsCreateMock.mockResolvedValue({ data: { formId: "form-555" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-555", name: "Sample Quiz", parents: [] },
+    });
     formsGetMock.mockResolvedValue({ data: {} });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
@@ -631,6 +670,9 @@ describe("google-forms core functions", () => {
       });
 
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-123", name: "Sample Quiz", parents: [] },
+    });
 
     const { updateGoogleFormFromQuiz } = await importFormsModule();
     const result = await updateGoogleFormFromQuiz("form-123", sampleQuiz);
@@ -649,6 +691,14 @@ describe("google-forms core functions", () => {
     expect(requests[3]).toEqual({ deleteItem: { location: { index: 1 } } });
     expect(requests[4]).toEqual({ deleteItem: { location: { index: 0 } } });
     expect(requests.some((request) => "createItem" in request)).toBe(true);
+    expect(driveUpdateMock).toHaveBeenCalledWith({
+      fileId: "form-123",
+      requestBody: {
+        name: "Sample Quiz",
+      },
+      fields: "id,name,parents",
+      supportsAllDrives: true,
+    });
   });
 
   it("updates a form with empty existing items and default quiz setting", async () => {
@@ -694,6 +744,14 @@ describe("google-forms core functions", () => {
       },
     });
     expect(requests.some((request) => "deleteItem" in request)).toBe(false);
+    expect(driveUpdateMock).toHaveBeenCalledWith({
+      fileId: "form-777",
+      requestBody: {
+        name: "No Quiz Flag",
+      },
+      fields: "id,name,parents",
+      supportsAllDrives: true,
+    });
   });
 
   it("creates with default isQuiz and moves to folder when existing parents are undefined", async () => {
@@ -739,9 +797,12 @@ describe("google-forms core functions", () => {
 
     expect(driveUpdateMock).toHaveBeenCalledWith({
       fileId: "form-888",
+      requestBody: {
+        name: "No Quiz Flag",
+      },
       addParents: "folder-777",
       removeParents: undefined,
-      fields: "id,parents",
+      fields: "id,name,parents",
       supportsAllDrives: true,
     });
   });

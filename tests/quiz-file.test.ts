@@ -42,6 +42,19 @@ describe("quiz-file", () => {
     expect(readBack.questions[0]?.type).toBe(quiz.questions[0]?.type);
   });
 
+  it("creates parent directories when writing nested output paths", async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "quiz-file-test-"));
+    tempDirs.push(dir);
+
+    const filePath = path.join(dir, "quizzes", "web-design", "quiz.yaml");
+    const quiz = buildTemplateQuizFile();
+
+    await writeQuizFile(filePath, quiz);
+
+    const raw = await fs.readFile(filePath, "utf8");
+    expect(raw).toContain("title: Sample Quiz");
+  });
+
   it("throws for invalid YAML content", async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), "quiz-file-test-"));
     tempDirs.push(dir);
