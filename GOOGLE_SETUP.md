@@ -45,7 +45,7 @@ If at any point a button or menu name looks slightly different from what's descr
 2. In the search box, type `Google Forms API` and press Enter.
 3. Click the result named **Google Forms API**.
 4. Click the blue **ENABLE** button. Wait a few seconds for it to finish.
-5. Repeat steps 2-4 for **Google Drive API**.c
+5. Repeat steps 2-4 for **Google Drive API**.
 
 That's it for this step.
 
