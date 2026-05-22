@@ -58,7 +58,7 @@ That's it for this step.
 3. Fill in the required fields:
    - **App name**: `Quiz Tool` (or whatever you want — only you will see it).
    - **User support email**: pick your Gmail address from the dropdown.
-   - **Audience**: select external
+   - **Audience**: select External
    - **Developer contact email** (at the bottom): type the same Gmail address.
    - Everything else can be left blank.
 4. Click **Create**.
@@ -76,7 +76,7 @@ This is the step that produces the actual `credentials.json` file the tool needs
 3. Give it a name like `Quiz Tool CLI` and click **CREATE**.
 4. A popup appears showing your new client. Click **DOWNLOAD JSON**.
 5. Find the file in your Downloads folder — it'll be named something like `client_secret_1234567890-abcdef.apps.googleusercontent.com.json`.
-6. **Rename it to `credentials.json`** and move it into the `quiz-generator` folder (the same folder that contains `package.json` and this README).
+6. **Rename it to `credentials.json`** and move it into the project/repo root (the same folder that contains `package.json` and this README).
 
 To confirm it's in the right place, you can run:
 
