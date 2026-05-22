@@ -62,11 +62,9 @@ That's it for this step.
    - **Developer contact email** (at the bottom): type the same Gmail address.
    - Everything else can be left blank.
 4. Click **Create**.
-
-[//]: # (didnt see this - data access? --> 5. On the **Scopes** page, just click **SAVE AND CONTINUE** without changing anything. &#40;The tool will request the specific permissions it needs at sign-in time; you don't need to pre-declare them here.&#41;)
-6. On the **Audience** page, click **+ ADD USERS** and add your own Gmail address. Click **SAVE AND CONTINUE**.
+5. On the **Audience** page, click **+ ADD USERS** and add your own Gmail address. Click **SAVE AND CONTINUE**.
    - Why? While the app is in "Testing" mode (which is fine for personal use), only listed test users can sign in. Adding yourself unlocks it for you.
-7. Review the summary and click **BACK TO DASHBOARD**.
+6. Review the summary and click **BACK TO DASHBOARD**.
 
 ## Step 4 — Create the credentials file
 
