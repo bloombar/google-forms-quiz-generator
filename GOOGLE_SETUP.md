@@ -29,15 +29,15 @@ If at any point a button or menu name looks slightly different from what's descr
 
 1. Open <https://console.cloud.google.com/> in your browser and sign in with your Google account.
 2. If this is your first time, you may be asked to agree to the Terms of Service. Accept them. (You will **not** be charged. The Forms API is free for normal use.)
-3. At the very top of the page, next to the words "Google Cloud," click the **project picker** dropdown. (If you've never made a project before, it will say "Select a project.")
+3. At the very top of the page, next to the words "Google Cloud," click the "Test Project" button. (If you've never made a project before, it will say "Select a project.")
 4. In the dialog that opens, click **NEW PROJECT** (top-right).
 5. Give it a name like `Quiz Tool`. You can leave the "Location" field as "No organization."
 6. Click **CREATE**. Wait about 10-30 seconds for Google to finish setting it up.
-7. When it's done, click the project picker dropdown again and select your new "Quiz Tool" project so that the rest of these steps apply to it.
+7. When it's done, click "Test Project" again and select your new "Quiz Tool" project so that the rest of these steps apply to it.
 
 > **Tip:** Always check the top of the page — the project name should say "Quiz Tool" (or whatever you named it). If it shows a different name, click the picker and switch projects. This is a common point of confusion.
 
-## Step 2 — Turn on the Google Forms API
+## Step 2 — Turn on the Google Forms & Google Drive APIs
 
 "API" stands for Application Programming Interface — it's just Google's term for "a feature other programs are allowed to use." You need to flip this switch so the tool can talk to Google Forms.
 
@@ -45,6 +45,7 @@ If at any point a button or menu name looks slightly different from what's descr
 2. In the search box, type `Google Forms API` and press Enter.
 3. Click the result named **Google Forms API**.
 4. Click the blue **ENABLE** button. Wait a few seconds for it to finish.
+5. Repeat steps 2-4 for **Google Drive API**.
 
 That's it for this step.
 
@@ -57,26 +58,25 @@ That's it for this step.
 3. Fill in the required fields:
    - **App name**: `Quiz Tool` (or whatever you want — only you will see it).
    - **User support email**: pick your Gmail address from the dropdown.
+   - **Audience**: select External
    - **Developer contact email** (at the bottom): type the same Gmail address.
    - Everything else can be left blank.
-4. Click **SAVE AND CONTINUE**.
-5. On the **Scopes** page, just click **SAVE AND CONTINUE** without changing anything. (The tool will request the specific permissions it needs at sign-in time; you don't need to pre-declare them here.)
-6. On the **Test users** page, click **+ ADD USERS** and add your own Gmail address. Click **SAVE AND CONTINUE**.
+4. Click **Create**.
+5. On the **Audience** page, click **+ ADD USERS** and add your own Gmail address. Click **SAVE AND CONTINUE**.
    - Why? While the app is in "Testing" mode (which is fine for personal use), only listed test users can sign in. Adding yourself unlocks it for you.
-7. Review the summary and click **BACK TO DASHBOARD**.
+6. Review the summary and click **BACK TO DASHBOARD**.
 
 ## Step 4 — Create the credentials file
 
 This is the step that produces the actual `credentials.json` file the tool needs.
 
-1. From the sidebar, go to **APIs & Services** → **Credentials**.
-2. At the top, click **+ CREATE CREDENTIALS** and choose **OAuth client ID**.
-3. For **Application type**, pick **Desktop app**.
+1. From the sidebar, go to **Clients**.
+2. At the top, click **Create client** and choose **Desktop app**.
    - Why? The tool runs on your computer, not on a website, so "Desktop app" is the right category.
-4. Give it a name like `Quiz Tool CLI` and click **CREATE**.
-5. A popup appears showing your new client. Click **DOWNLOAD JSON**.
-6. Find the file in your Downloads folder — it'll be named something like `client_secret_1234567890-abcdef.apps.googleusercontent.com.json`.
-7. **Rename it to `credentials.json`** and move it into the `quiz-generator` folder (the same folder that contains `package.json` and this README).
+3. Give it a name like `Quiz Tool CLI` and click **CREATE**.
+4. A popup appears showing your new client. Click **DOWNLOAD JSON**.
+5. Find the file in your Downloads folder — it'll be named something like `client_secret_1234567890-abcdef.apps.googleusercontent.com.json`.
+6. **Rename it to `credentials.json`** and move it into the project/repo root (the same folder that contains `package.json` and this README).
 
 To confirm it's in the right place, you can run:
 
@@ -84,7 +84,7 @@ To confirm it's in the right place, you can run:
 ls credentials.json
 ```
 
-If it prints `credentials.json`, you're set. If it says "No such file," double-check the location.
+If it prints the directory, you're set. If it says "No such file," double-check the location.
 
 ## Step 5 — Run a command for the first time
 
@@ -131,11 +131,6 @@ By default the tool looks for `credentials.json` and `tokens/google-oauth.json` 
 1. Copy `.env.example` to `.env`:
    ```bash
    cp .env.example .env
-   ```
-2. Open `.env` in a text editor and set:
-   ```
-   GOOGLE_CREDENTIALS_PATH=/absolute/path/to/credentials.json
-   GOOGLE_TOKEN_PATH=/absolute/path/to/tokens/google-oauth.json
    ```
 
 Most people can skip this entirely.
