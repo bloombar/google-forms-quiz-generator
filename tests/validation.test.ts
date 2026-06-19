@@ -141,6 +141,45 @@ describe("validateQuizForm", () => {
     expect(result.isQuiz).toBe(true);
   });
 
+  it("defaults emailCollection to verified when omitted", () => {
+    const result = validateQuizForm({
+      version: 1,
+      title: "Quiz",
+      questions: [
+        {
+          title: "Q",
+          type: "short_text",
+        },
+      ],
+    });
+
+    expect(result.emailCollection).toBe("verified");
+  });
+
+  it("accepts supported emailCollection modes", () => {
+    for (const mode of ["verified", "responder_input", "none"] as const) {
+      const result = validateQuizForm({
+        version: 1,
+        title: "Quiz",
+        emailCollection: mode,
+        questions: [{ title: "Q", type: "short_text" }],
+      });
+
+      expect(result.emailCollection).toBe(mode);
+    }
+  });
+
+  it("rejects an unsupported emailCollection mode", () => {
+    expect(() =>
+      validateQuizForm({
+        version: 1,
+        title: "Quiz",
+        emailCollection: "always",
+        questions: [{ title: "Q", type: "short_text" }],
+      }),
+    ).toThrow("Invalid emailCollection");
+  });
+
   it("rejects non-object root input", () => {
     expect(() => validateQuizForm(null)).toThrow(
       "expected an object at root level",

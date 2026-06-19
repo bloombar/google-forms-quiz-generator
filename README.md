@@ -74,6 +74,7 @@ version: 1
 title: My First Quiz
 description: A short description shown to respondents.
 isQuiz: true
+emailCollection: verified
 questions:
   - title: What is 2 + 2?
     type: single_choice
@@ -202,6 +203,7 @@ The `update` command **replaces all questions** in a form. It does not merge —
 | `YAML validation error: ...`             | See [YAML_FORMAT.md](YAML_FORMAT.md) and check the field mentioned in the error.|
 | `Form created but no questions`          | YAML parsed but had no `questions:` array. Compare to the template.             |
 | `Cannot find form`                       | Form ID is wrong, or your Google account doesn't have edit access to that form. |
+| `Warning: ... Drive file could not be renamed or moved (HTTP 403)` | Not an error — the form's content was saved. The tool can only rename/move forms it created itself (the `drive.file` scope), so for forms made elsewhere this rename is skipped. The command still succeeds. |
 
 More cases in [GOOGLE_SETUP.md](GOOGLE_SETUP.md#troubleshooting) and [ADVANCED.md](ADVANCED.md#error-handling-and-debugging).
 

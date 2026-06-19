@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- `emailCollection` top-level YAML field to control how the published form collects respondent email addresses: `verified` (default), `responder_input`, or `none`.
 - `--folder-id` option on the `create` command to place new forms in a specific Google Drive folder.
 - Local deployment log — every successful `create` appends to `.deployments/deployments.json` so you have a running record of forms you've created.
 - A full vitest test suite covering YAML I/O, validation, the Google Forms mapping layer, OAuth helpers, deployment tracking, and the CLI. Coverage report written to `coverage/`.
@@ -15,6 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 - Documentation rewritten throughout for clarity and to lower the barrier for users new to the Google Cloud Console and OAuth. Major rewrites: `README.md`, `GOOGLE_SETUP.md`, `QUICKSTART.md`, `YAML_FORMAT.md`.
+- Upgraded `googleapis` to v173 (for `emailCollectionType` support) and aligned `google-auth-library` to v10 via a dependency override.
+
+### Fixed
+
+- `update` (and `create`) no longer fail with a fatal error when run against a form the tool didn't create. The cosmetic Google Drive rename/move requires the `drive.file` scope and returns HTTP 403 for externally-created forms; this is now caught and reported as a warning, since the form's questions, title, description, and quiz settings are already applied successfully.
 
 ## [1.0.0] — 2026-05-21
 

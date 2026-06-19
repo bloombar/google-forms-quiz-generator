@@ -2,6 +2,7 @@ version: 1
 title: Sample Quiz
 description: Edit this file and upload it to Google Forms.
 isQuiz: true
+emailCollection: verified
 questions:
   - title: What is 2 + 2?
     type: single_choice

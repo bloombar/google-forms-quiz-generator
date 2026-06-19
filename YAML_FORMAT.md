@@ -19,6 +19,7 @@ version: 1
 title: My Quiz
 description: An optional description shown at the top of the form.
 isQuiz: true
+emailCollection: verified
 questions:
   - title: First question
     type: single_choice
@@ -38,7 +39,20 @@ questions:
 | `title`       | string  | Yes      | Title of the quiz/form, displayed at the top.                                            |
 | `description` | string  | No       | Short description shown below the title. Plain text.                                     |
 | `isQuiz`      | boolean | No       | Default `true`. Set to `false` for a survey (no scoring or correct answers).            |
+| `emailCollection` | string | No   | Default `verified`. Controls whether the form collects respondent emails: `verified`, `responder_input`, or `none` (see below). |
 | `questions`   | array   | Yes      | A non-empty list of question objects (see below).                                        |
+
+### `emailCollection` — collecting respondent email addresses
+
+Controls the published form's email-collection setting. One of:
+
+| Value             | Behaviour                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| `verified`        | (Default) The form records the signed-in Google account's verified email automatically.                    |
+| `responder_input` | The form shows an email field that the respondent fills in themselves (not verified).                      |
+| `none`            | The form does not collect email addresses.                                                                 |
+
+> **Note:** `verified` only auto-collects when the form **owner** is on a Google Workspace account. For a personal Google account, Google treats `verified` the same as `none` (no email is collected) — this is a Google-side limitation, not something this tool controls. Use `responder_input` if you need an email from respondents on a personal account.
 
 ## Question objects
 

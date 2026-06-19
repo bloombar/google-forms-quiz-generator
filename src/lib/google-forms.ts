@@ -1,9 +1,45 @@
 import { drive_v3, forms_v1, google } from "googleapis";
 import { getAuthorizedClient } from "./google-auth.js";
-import { QuizForm, QuizOption, QuizQuestion } from "./types.js";
+import {
+  DEFAULT_EMAIL_COLLECTION_MODE,
+  EmailCollectionMode,
+  QuizForm,
+  QuizOption,
+  QuizQuestion,
+} from "./types.js";
 
 export interface CreateFormOptions {
   folderId?: string;
+}
+
+const EMAIL_COLLECTION_MODE_TO_API: Record<EmailCollectionMode, string> = {
+  verified: "VERIFIED",
+  responder_input: "RESPONDER_INPUT",
+  none: "DO_NOT_COLLECT",
+};
+
+function emailCollectionTypeFromApi(
+  value: string | null | undefined,
+): EmailCollectionMode {
+  if (value === "RESPONDER_INPUT") return "responder_input";
+  if (value === "DO_NOT_COLLECT") return "none";
+  return "verified";
+}
+
+function buildSettings(quiz: QuizForm): {
+  settings: forms_v1.Schema$FormSettings;
+  updateMask: string;
+} {
+  const mode = quiz.emailCollection ?? DEFAULT_EMAIL_COLLECTION_MODE;
+  return {
+    settings: {
+      quizSettings: {
+        isQuiz: quiz.isQuiz ?? true,
+      },
+      emailCollectionType: EMAIL_COLLECTION_MODE_TO_API[mode],
+    },
+    updateMask: "quizSettings.isQuiz,emailCollectionType",
+  };
 }
 
 function questionTypeToGoogleType(
@@ -157,33 +193,43 @@ async function syncDriveFileMetadata(
     supportsAllDrives: true,
   };
 
-  if (trimmedFolderId) {
-    const current = await drive.files.get({
-      fileId: formId,
-      fields: "parents",
-      supportsAllDrives: true,
-    });
+  try {
+    if (trimmedFolderId) {
+      const current = await drive.files.get({
+        fileId: formId,
+        fields: "parents",
+        supportsAllDrives: true,
+      });
 
-    const parentIds = current.data.parents ?? [];
-    updateRequest.addParents = trimmedFolderId;
-    updateRequest.removeParents =
-      parentIds.length > 0 ? parentIds.join(",") : undefined;
+      const parentIds = current.data.parents ?? [];
+      updateRequest.addParents = trimmedFolderId;
+      updateRequest.removeParents =
+        parentIds.length > 0 ? parentIds.join(",") : undefined;
+    }
+
+    await drive.files.update(updateRequest);
+  } catch (error) {
+    // The Drive rename/move only keeps the Drive file's display name in sync
+    // with the form title. The `drive.file` OAuth scope grants access only to
+    // files this app created, so forms created elsewhere (e.g. in the Forms UI)
+    // return HTTP 403 here — but the Forms API calls above already applied the
+    // questions, title, description, and quiz settings. Treat 403 as a
+    // non-fatal warning rather than failing the whole command.
+    if ((error as { status?: number }).status === 403) {
+      console.warn(
+        `Warning: the form content was saved, but its Google Drive file could not be renamed or moved because this app did not create it (HTTP 403). The questions, title, description, and quiz settings were applied successfully.`,
+      );
+      return;
+    }
+
+    throw error;
   }
-
-  await drive.files.update(updateRequest);
 }
 
 function buildCreateRequests(quiz: QuizForm): forms_v1.Schema$Request[] {
   const requests: forms_v1.Schema$Request[] = [
     {
-      updateSettings: {
-        settings: {
-          quizSettings: {
-            isQuiz: quiz.isQuiz ?? true,
-          },
-        },
-        updateMask: "quizSettings.isQuiz",
-      },
+      updateSettings: buildSettings(quiz),
     },
   ];
 
@@ -215,6 +261,9 @@ export async function downloadFormAsQuizFile(
     title: form.info?.title ?? "Untitled form",
     description: form.info?.description ?? undefined,
     isQuiz: form.settings?.quizSettings?.isQuiz ?? true,
+    emailCollection: emailCollectionTypeFromApi(
+      form.settings?.emailCollectionType,
+    ),
     questions,
   };
 }
@@ -284,14 +333,7 @@ export async function updateGoogleFormFromQuiz(
       },
     },
     {
-      updateSettings: {
-        settings: {
-          quizSettings: {
-            isQuiz: quiz.isQuiz ?? true,
-          },
-        },
-        updateMask: "quizSettings.isQuiz",
-      },
+      updateSettings: buildSettings(quiz),
     },
   ];
 

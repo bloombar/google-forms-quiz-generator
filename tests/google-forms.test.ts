@@ -180,6 +180,82 @@ describe("google-forms core functions", () => {
     });
   });
 
+  it("applies emailCollection mode to the form settings on create", async () => {
+    const cases: Array<[QuizForm["emailCollection"], string]> = [
+      ["verified", "VERIFIED"],
+      ["responder_input", "RESPONDER_INPUT"],
+      ["none", "DO_NOT_COLLECT"],
+    ];
+
+    for (const [mode, expected] of cases) {
+      formsCreateMock.mockResolvedValue({ data: { formId: "form-email" } });
+      formsBatchUpdateMock.mockResolvedValue({ data: {} });
+      driveUpdateMock.mockResolvedValue({
+        data: { id: "form-email", name: "Sample Quiz", parents: [] },
+      });
+      formsGetMock.mockResolvedValue({
+        data: { responderUri: "https://example.com/view" },
+      });
+
+      const { createGoogleFormFromQuiz } = await importFormsModule();
+      await createGoogleFormFromQuiz({ ...sampleQuiz, emailCollection: mode });
+
+      const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
+        requestBody: { requests: Array<Record<string, unknown>> };
+      };
+      const settingsRequest = batchCall.requestBody.requests.find(
+        (request) => "updateSettings" in request,
+      ) as {
+        updateSettings: {
+          settings: { emailCollectionType?: string };
+          updateMask: string;
+        };
+      };
+
+      expect(settingsRequest.updateSettings.settings.emailCollectionType).toBe(
+        expected,
+      );
+      expect(settingsRequest.updateSettings.updateMask).toBe(
+        "quizSettings.isQuiz,emailCollectionType",
+      );
+
+      formsBatchUpdateMock.mockReset();
+    }
+  });
+
+  it("defaults emailCollection to verified when the quiz omits it on create", async () => {
+    const quizWithoutEmail = {
+      version: 1,
+      title: "No Email Mode",
+      questions: [{ title: "Q", type: "short_text" }],
+    } as unknown as QuizForm;
+
+    formsCreateMock.mockResolvedValue({ data: { formId: "form-noemail" } });
+    formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockResolvedValue({
+      data: { id: "form-noemail", name: "No Email Mode", parents: [] },
+    });
+    formsGetMock.mockResolvedValue({
+      data: { responderUri: "https://example.com/view" },
+    });
+
+    const { createGoogleFormFromQuiz } = await importFormsModule();
+    await createGoogleFormFromQuiz(quizWithoutEmail);
+
+    const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
+      requestBody: { requests: Array<Record<string, unknown>> };
+    };
+    const settingsRequest = batchCall.requestBody.requests.find(
+      (request) => "updateSettings" in request,
+    ) as {
+      updateSettings: { settings: { emailCollectionType?: string } };
+    };
+
+    expect(settingsRequest.updateSettings.settings.emailCollectionType).toBe(
+      "VERIFIED",
+    );
+  });
+
   it("creates a form with long_text question mapped as paragraph text and no grading", async () => {
     formsCreateMock.mockResolvedValue({ data: { formId: "form-789" } });
     formsBatchUpdateMock.mockResolvedValue({ data: {} });
@@ -473,6 +549,33 @@ describe("google-forms core functions", () => {
     expect(result.questions[1]?.type).toBe("long_text");
   });
 
+  it("maps the form emailCollectionType back to a quiz emailCollection mode", async () => {
+    const cases: Array<[string | undefined, string]> = [
+      ["VERIFIED", "verified"],
+      ["RESPONDER_INPUT", "responder_input"],
+      ["DO_NOT_COLLECT", "none"],
+      [undefined, "verified"],
+    ];
+
+    for (const [apiValue, expected] of cases) {
+      formsGetMock.mockResolvedValue({
+        data: {
+          info: { title: "Downloaded Quiz" },
+          settings: {
+            quizSettings: { isQuiz: true },
+            emailCollectionType: apiValue,
+          },
+          items: [],
+        },
+      });
+
+      const { downloadFormAsQuizFile } = await importFormsModule();
+      const result = await downloadFormAsQuizFile("form-email");
+
+      expect(result.emailCollection).toBe(expected);
+    }
+  });
+
   it("maps text question correctAnswers and filters unknown question shapes", async () => {
     formsGetMock.mockResolvedValue({
       data: {
@@ -701,6 +804,48 @@ describe("google-forms core functions", () => {
     });
   });
 
+  it("treats a 403 from the Drive rename as a non-fatal warning when updating an externally-created form", async () => {
+    formsGetMock
+      .mockResolvedValueOnce({ data: { items: [{}] } })
+      .mockResolvedValueOnce({
+        data: { responderUri: "https://example.com/updated" },
+      });
+    formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockRejectedValue(
+      Object.assign(new Error("appNotAuthorizedToFile"), { status: 403 }),
+    );
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      const { updateGoogleFormFromQuiz } = await importFormsModule();
+      const result = await updateGoogleFormFromQuiz("external-form", sampleQuiz);
+
+      expect(result.formId).toBe("external-form");
+      expect(result.responderUri).toBe("https://example.com/updated");
+      expect(formsBatchUpdateMock).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("HTTP 403"),
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("rethrows non-403 errors from the Drive rename", async () => {
+    formsGetMock.mockResolvedValueOnce({ data: { items: [] } });
+    formsBatchUpdateMock.mockResolvedValue({ data: {} });
+    driveUpdateMock.mockRejectedValue(
+      Object.assign(new Error("server error"), { status: 500 }),
+    );
+
+    const { updateGoogleFormFromQuiz } = await importFormsModule();
+
+    await expect(
+      updateGoogleFormFromQuiz("form-500", sampleQuiz),
+    ).rejects.toThrow("server error");
+  });
+
   it("updates a form with empty existing items and default quiz setting", async () => {
     const quizWithoutIsQuiz: QuizForm = {
       version: 1,
@@ -739,8 +884,9 @@ describe("google-forms core functions", () => {
           quizSettings: {
             isQuiz: true,
           },
+          emailCollectionType: "VERIFIED",
         },
-        updateMask: "quizSettings.isQuiz",
+        updateMask: "quizSettings.isQuiz,emailCollectionType",
       },
     });
     expect(requests.some((request) => "deleteItem" in request)).toBe(false);
@@ -790,8 +936,9 @@ describe("google-forms core functions", () => {
           quizSettings: {
             isQuiz: true,
           },
+          emailCollectionType: "VERIFIED",
         },
-        updateMask: "quizSettings.isQuiz",
+        updateMask: "quizSettings.isQuiz,emailCollectionType",
       },
     });
 

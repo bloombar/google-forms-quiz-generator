@@ -30,6 +30,7 @@ export function buildTemplateQuizFile(): QuizForm {
     title: "Sample Quiz",
     description: "Edit this file and upload it to Google Forms.",
     isQuiz: true,
+    emailCollection: "verified",
     questions: [
       {
         title: "What is 2 + 2?",

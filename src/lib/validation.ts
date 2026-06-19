@@ -1,4 +1,10 @@
-import { QuizForm, QuizQuestion, SUPPORTED_TYPES } from "./types.js";
+import {
+  DEFAULT_EMAIL_COLLECTION_MODE,
+  QuizForm,
+  QuizQuestion,
+  SUPPORTED_EMAIL_COLLECTION_MODES,
+  SUPPORTED_TYPES,
+} from "./types.js";
 
 function assertString(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || value.trim().length === 0) {
@@ -116,6 +122,14 @@ export function validateQuizForm(raw: unknown): QuizForm {
 
   if (form.isQuiz === undefined) {
     form.isQuiz = true;
+  }
+
+  if (form.emailCollection === undefined) {
+    form.emailCollection = DEFAULT_EMAIL_COLLECTION_MODE;
+  } else if (!SUPPORTED_EMAIL_COLLECTION_MODES.includes(form.emailCollection)) {
+    throw new Error(
+      `Invalid emailCollection: expected one of ${SUPPORTED_EMAIL_COLLECTION_MODES.join(", ")}.`,
+    );
   }
 
   return form;
