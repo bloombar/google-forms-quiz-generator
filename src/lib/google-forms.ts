@@ -1,5 +1,5 @@
 import { drive_v3, forms_v1, google } from "googleapis";
-import { getAuthorizedClient } from "./google-auth.js";
+import type { OAuth2Client } from "google-auth-library";
 import {
   DEFAULT_EMAIL_COLLECTION_MODE,
   EmailCollectionMode,
@@ -9,7 +9,15 @@ import {
 } from "./types.js";
 
 export interface CreateFormOptions {
+  /** An authorized OAuth2 client acting as the form owner. */
+  auth: OAuth2Client;
   folderId?: string;
+}
+
+/** Auth for operations that only need an authorized client (update / download). */
+export interface FormAuthOptions {
+  /** An authorized OAuth2 client acting as the form owner. */
+  auth: OAuth2Client;
 }
 
 const EMAIL_COLLECTION_MODE_TO_API: Record<EmailCollectionMode, string> = {
@@ -166,22 +174,21 @@ function mapGoogleItemToQuestion(
   return null;
 }
 
-async function getFormsClient(): Promise<forms_v1.Forms> {
-  const auth = await getAuthorizedClient();
+function getFormsClient(auth: OAuth2Client): forms_v1.Forms {
   return google.forms({ version: "v1", auth });
 }
 
-async function getDriveClient(): Promise<drive_v3.Drive> {
-  const auth = await getAuthorizedClient();
+function getDriveClient(auth: OAuth2Client): drive_v3.Drive {
   return google.drive({ version: "v3", auth });
 }
 
 async function syncDriveFileMetadata(
+  auth: OAuth2Client,
   formId: string,
   title: string,
   folderId?: string,
 ): Promise<void> {
-  const drive = await getDriveClient();
+  const drive = getDriveClient(auth);
   const trimmedFolderId = folderId?.trim();
 
   const updateRequest: drive_v3.Params$Resource$Files$Update = {
@@ -247,8 +254,9 @@ function buildCreateRequests(quiz: QuizForm): forms_v1.Schema$Request[] {
 
 export async function downloadFormAsQuizFile(
   formId: string,
+  options: FormAuthOptions,
 ): Promise<QuizForm> {
-  const forms = await getFormsClient();
+  const forms = getFormsClient(options.auth);
   const response = await forms.forms.get({ formId });
   const form = response.data;
 
@@ -270,9 +278,9 @@ export async function downloadFormAsQuizFile(
 
 export async function createGoogleFormFromQuiz(
   quiz: QuizForm,
-  options?: CreateFormOptions,
+  options: CreateFormOptions,
 ): Promise<{ formId: string; responderUri?: string }> {
-  const forms = await getFormsClient();
+  const forms = getFormsClient(options.auth);
 
   const createResponse = await forms.forms.create({
     requestBody: {
@@ -303,7 +311,7 @@ export async function createGoogleFormFromQuiz(
     requestBody: { requests },
   });
 
-  await syncDriveFileMetadata(formId, quiz.title, options?.folderId);
+  await syncDriveFileMetadata(options.auth, formId, quiz.title, options.folderId);
 
   const created = await forms.forms.get({ formId });
 
@@ -316,8 +324,9 @@ export async function createGoogleFormFromQuiz(
 export async function updateGoogleFormFromQuiz(
   formId: string,
   quiz: QuizForm,
+  options: FormAuthOptions,
 ): Promise<{ formId: string; responderUri?: string }> {
-  const forms = await getFormsClient();
+  const forms = getFormsClient(options.auth);
   const existing = await forms.forms.get({ formId });
 
   const existingCount = existing.data.items?.length ?? 0;
@@ -359,7 +368,7 @@ export async function updateGoogleFormFromQuiz(
     requestBody: { requests },
   });
 
-  await syncDriveFileMetadata(formId, quiz.title);
+  await syncDriveFileMetadata(options.auth, formId, quiz.title);
 
   const updated = await forms.forms.get({ formId });
 

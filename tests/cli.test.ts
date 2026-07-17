@@ -11,6 +11,10 @@ const downloadFormAsQuizFileMock = vi.fn();
 const createGoogleFormFromQuizMock = vi.fn();
 const updateGoogleFormFromQuizMock = vi.fn();
 const trackDeploymentMock = vi.fn();
+const getAuthorizedClientMock = vi.fn();
+
+/** Stand-in for the OAuth2 client the CLI acquires and threads into the lib. */
+const fakeAuthClient = { id: "auth" };
 
 vi.mock("dotenv", () => ({
   default: {
@@ -40,6 +44,10 @@ vi.mock("../src/lib/google-forms.js", () => ({
 
 vi.mock("../src/lib/deployments.js", () => ({
   trackDeployment: trackDeploymentMock,
+}));
+
+vi.mock("../src/lib/google-auth.js", () => ({
+  getAuthorizedClient: getAuthorizedClientMock,
 }));
 
 interface FakeCommandBuilder {
@@ -121,6 +129,8 @@ describe("cli command handlers", () => {
     createGoogleFormFromQuizMock.mockReset();
     updateGoogleFormFromQuizMock.mockReset();
     trackDeploymentMock.mockReset();
+    getAuthorizedClientMock.mockReset();
+    getAuthorizedClientMock.mockResolvedValue(fakeAuthClient);
 
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -159,7 +169,9 @@ describe("cli command handlers", () => {
 
     await importCliModule();
 
-    expect(downloadFormAsQuizFileMock).toHaveBeenCalledWith("form-1");
+    expect(downloadFormAsQuizFileMock).toHaveBeenCalledWith("form-1", {
+      auth: fakeAuthClient,
+    });
     expect(writeQuizFileMock).toHaveBeenCalledWith("quiz.yaml", quiz);
   });
 
@@ -190,6 +202,7 @@ describe("cli command handlers", () => {
 
     expect(readQuizFileMock).toHaveBeenCalledWith("quiz.yaml");
     expect(createGoogleFormFromQuizMock).toHaveBeenCalledWith(quiz, {
+      auth: fakeAuthClient,
       folderId: "folder-123",
     });
     expect(trackDeploymentMock).toHaveBeenCalledWith({
@@ -222,7 +235,9 @@ describe("cli command handlers", () => {
     await importCliModule();
 
     expect(readQuizFileMock).toHaveBeenCalledWith("quiz.yaml");
-    expect(updateGoogleFormFromQuizMock).toHaveBeenCalledWith("form-1", quiz);
+    expect(updateGoogleFormFromQuizMock).toHaveBeenCalledWith("form-1", quiz, {
+      auth: fakeAuthClient,
+    });
   });
 
   it("logs and exits on parse error", async () => {

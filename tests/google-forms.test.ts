@@ -1,7 +1,5 @@
-import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { OAuth2Client } from "google-auth-library";
 import type { QuizForm } from "../src/lib/types.js";
 
 const formsCreateMock = vi.fn();
@@ -29,6 +27,9 @@ vi.mock("googleapis", () => ({
     drive: googleDriveFactoryMock,
   },
 }));
+
+/** The core calls google.forms/google.drive with this; the mocks ignore it. */
+const auth = {} as OAuth2Client;
 
 const sampleQuiz: QuizForm = {
   version: 1,
@@ -78,17 +79,13 @@ const mixedChoiceQuiz: QuizForm = {
   ],
 };
 
-let tempDir = "";
-let originalEnvCredentials = "";
-let originalEnvToken = "";
-
 async function importFormsModule() {
   vi.resetModules();
   return import("../src/lib/google-forms.js");
 }
 
 describe("google-forms core functions", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     formsCreateMock.mockReset();
     formsGetMock.mockReset();
     formsBatchUpdateMock.mockReset();
@@ -96,46 +93,6 @@ describe("google-forms core functions", () => {
     driveUpdateMock.mockReset();
     googleFormsFactoryMock.mockClear();
     googleDriveFactoryMock.mockClear();
-
-    originalEnvCredentials = process.env.GOOGLE_CREDENTIALS_PATH ?? "";
-    originalEnvToken = process.env.GOOGLE_TOKEN_PATH ?? "";
-
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "google-forms-test-"));
-    const tokenPath = path.join(tempDir, "tokens", "google-oauth.json");
-
-    await fs.mkdir(path.dirname(tokenPath), { recursive: true });
-    await fs.writeFile(
-      tokenPath,
-      JSON.stringify({
-        type: "authorized_user",
-        client_id: "id",
-        client_secret: "secret",
-        refresh_token: "refresh",
-      }),
-      "utf8",
-    );
-
-    process.env.GOOGLE_TOKEN_PATH = tokenPath;
-    process.env.GOOGLE_CREDENTIALS_PATH = path.join(
-      tempDir,
-      "credentials.json",
-    );
-  });
-
-  afterEach(async () => {
-    if (originalEnvCredentials) {
-      process.env.GOOGLE_CREDENTIALS_PATH = originalEnvCredentials;
-    } else {
-      delete process.env.GOOGLE_CREDENTIALS_PATH;
-    }
-
-    if (originalEnvToken) {
-      process.env.GOOGLE_TOKEN_PATH = originalEnvToken;
-    } else {
-      delete process.env.GOOGLE_TOKEN_PATH;
-    }
-
-    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   it("creates a form and applies metadata and questions", async () => {
@@ -151,7 +108,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    const result = await createGoogleFormFromQuiz(sampleQuiz);
+    const result = await createGoogleFormFromQuiz(sampleQuiz, { auth });
 
     expect(result.formId).toBe("form-123");
     expect(result.responderUri).toBe("https://example.com/view");
@@ -198,7 +155,10 @@ describe("google-forms core functions", () => {
       });
 
       const { createGoogleFormFromQuiz } = await importFormsModule();
-      await createGoogleFormFromQuiz({ ...sampleQuiz, emailCollection: mode });
+      await createGoogleFormFromQuiz(
+        { ...sampleQuiz, emailCollection: mode },
+        { auth },
+      );
 
       const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
         requestBody: { requests: Array<Record<string, unknown>> };
@@ -240,7 +200,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(quizWithoutEmail);
+    await createGoogleFormFromQuiz(quizWithoutEmail, { auth });
 
     const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
       requestBody: { requests: Array<Record<string, unknown>> };
@@ -267,7 +227,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(textOnlyQuiz);
+    await createGoogleFormFromQuiz(textOnlyQuiz, { auth });
 
     const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
       requestBody: { requests: Array<Record<string, unknown>> };
@@ -308,7 +268,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(mixedChoiceQuiz);
+    await createGoogleFormFromQuiz(mixedChoiceQuiz, { auth });
 
     const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
       requestBody: { requests: Array<Record<string, unknown>> };
@@ -371,7 +331,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(malformedQuiz);
+    await createGoogleFormFromQuiz(malformedQuiz, { auth });
 
     const batchCall = formsBatchUpdateMock.mock.calls[0]?.[0] as {
       requestBody: { requests: Array<Record<string, unknown>> };
@@ -410,7 +370,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(sampleQuiz, { folderId: "folder-999" });
+    await createGoogleFormFromQuiz(sampleQuiz, { auth, folderId: "folder-999" });
 
     expect(driveGetMock).toHaveBeenCalledWith({
       fileId: "form-123",
@@ -440,7 +400,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(sampleQuiz, { folderId: "   " });
+    await createGoogleFormFromQuiz(sampleQuiz, { auth, folderId: "   " });
 
     expect(googleDriveFactoryMock).toHaveBeenCalledTimes(1);
     expect(driveGetMock).not.toHaveBeenCalled();
@@ -466,7 +426,7 @@ describe("google-forms core functions", () => {
     });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    await createGoogleFormFromQuiz(sampleQuiz, { folderId: "folder-999" });
+    await createGoogleFormFromQuiz(sampleQuiz, { auth, folderId: "folder-999" });
 
     expect(driveUpdateMock).toHaveBeenCalledWith({
       fileId: "form-123",
@@ -485,7 +445,7 @@ describe("google-forms core functions", () => {
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
 
-    await expect(createGoogleFormFromQuiz(sampleQuiz)).rejects.toThrow(
+    await expect(createGoogleFormFromQuiz(sampleQuiz, { auth })).rejects.toThrow(
       "formId",
     );
   });
@@ -540,7 +500,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-1");
+    const result = await downloadFormAsQuizFile("form-1", { auth });
 
     expect(result.title).toBe("Downloaded Quiz");
     expect(result.questions).toHaveLength(2);
@@ -570,7 +530,7 @@ describe("google-forms core functions", () => {
       });
 
       const { downloadFormAsQuizFile } = await importFormsModule();
-      const result = await downloadFormAsQuizFile("form-email");
+      const result = await downloadFormAsQuizFile("form-email", { auth });
 
       expect(result.emailCollection).toBe(expected);
     }
@@ -611,7 +571,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-2");
+    const result = await downloadFormAsQuizFile("form-2", { auth });
 
     expect(result.questions).toHaveLength(1);
     expect(result.questions[0]?.type).toBe("short_text");
@@ -652,7 +612,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-3");
+    const result = await downloadFormAsQuizFile("form-3", { auth });
 
     expect(result.questions[0]?.type).toBe("multiple_choice");
     expect(result.questions[1]?.type).toBe("dropdown");
@@ -667,7 +627,7 @@ describe("google-forms core functions", () => {
     formsGetMock.mockResolvedValue({ data: {} });
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
-    const result = await createGoogleFormFromQuiz(sampleQuiz);
+    const result = await createGoogleFormFromQuiz(sampleQuiz, { auth });
 
     expect(result.formId).toBe("form-555");
     expect(result.responderUri).toBeUndefined();
@@ -681,7 +641,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-1");
+    const result = await downloadFormAsQuizFile("form-1", { auth });
 
     expect(result.title).toBe("Untitled form");
     expect(result.isQuiz).toBe(true);
@@ -698,7 +658,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-4");
+    const result = await downloadFormAsQuizFile("form-4", { auth });
 
     expect(result.title).toBe("Quiz Without Items");
     expect(result.questions).toEqual([]);
@@ -726,7 +686,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-5");
+    const result = await downloadFormAsQuizFile("form-5", { auth });
 
     expect(result.questions).toHaveLength(1);
     expect(result.questions[0]?.type).toBe("single_choice");
@@ -754,7 +714,7 @@ describe("google-forms core functions", () => {
     });
 
     const { downloadFormAsQuizFile } = await importFormsModule();
-    const result = await downloadFormAsQuizFile("form-6");
+    const result = await downloadFormAsQuizFile("form-6", { auth });
 
     expect(result.questions[0]?.title).toBe("Untitled question");
   });
@@ -778,7 +738,9 @@ describe("google-forms core functions", () => {
     });
 
     const { updateGoogleFormFromQuiz } = await importFormsModule();
-    const result = await updateGoogleFormFromQuiz("form-123", sampleQuiz);
+    const result = await updateGoogleFormFromQuiz("form-123", sampleQuiz, {
+      auth,
+    });
 
     expect(result.formId).toBe("form-123");
     expect(result.responderUri).toBe("https://example.com/updated");
@@ -819,7 +781,9 @@ describe("google-forms core functions", () => {
 
     try {
       const { updateGoogleFormFromQuiz } = await importFormsModule();
-      const result = await updateGoogleFormFromQuiz("external-form", sampleQuiz);
+      const result = await updateGoogleFormFromQuiz("external-form", sampleQuiz, {
+        auth,
+      });
 
       expect(result.formId).toBe("external-form");
       expect(result.responderUri).toBe("https://example.com/updated");
@@ -842,7 +806,7 @@ describe("google-forms core functions", () => {
     const { updateGoogleFormFromQuiz } = await importFormsModule();
 
     await expect(
-      updateGoogleFormFromQuiz("form-500", sampleQuiz),
+      updateGoogleFormFromQuiz("form-500", sampleQuiz, { auth }),
     ).rejects.toThrow("server error");
   });
 
@@ -868,6 +832,7 @@ describe("google-forms core functions", () => {
     const result = await updateGoogleFormFromQuiz(
       "form-777",
       quizWithoutIsQuiz,
+      { auth },
     );
 
     expect(result.formId).toBe("form-777");
@@ -924,6 +889,7 @@ describe("google-forms core functions", () => {
 
     const { createGoogleFormFromQuiz } = await importFormsModule();
     await createGoogleFormFromQuiz(quizWithoutIsQuiz, {
+      auth,
       folderId: "folder-777",
     });
 

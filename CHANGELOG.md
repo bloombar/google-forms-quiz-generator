@@ -6,8 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-07-17
+
 ### Added
 
+- **Importable library API.** The package now exposes a public entry point (`src/index.ts` → `dist/index.js`, with type declarations) so other apps can create, update, and read Google Forms quizzes in-process — e.g. `import { createGoogleFormFromQuiz } from "google-forms-quiz-tool"`. The CLI is unchanged and still installs as `quiz-tool`.
 - `emailCollection` top-level YAML field to control how the published form collects respondent email addresses: `verified` (default), `responder_input`, or `none`.
 - `--folder-id` option on the `create` command to place new forms in a specific Google Drive folder.
 - Local deployment log — every successful `create` appends to `.deployments/deployments.json` so you have a running record of forms you've created.
@@ -15,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- **Auth is now injected, not acquired internally.** `createGoogleFormFromQuiz`, `updateGoogleFormFromQuiz`, and `downloadFormAsQuizFile` take an authorized `OAuth2Client` via an options argument (`{ auth }`). The CLI still obtains the client through the interactive local-auth flow and passes it in; library consumers supply their own (e.g. built from a stored refresh token). One auth-agnostic core now serves both the CLI and an in-process host.
 - Documentation rewritten throughout for clarity and to lower the barrier for users new to the Google Cloud Console and OAuth. Major rewrites: `README.md`, `GOOGLE_SETUP.md`, `QUICKSTART.md`, `YAML_FORMAT.md`.
 - Upgraded `googleapis` to v173 (for `emailCollectionType` support) and aligned `google-auth-library` to v10 via a dependency override.
 

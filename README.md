@@ -178,6 +178,22 @@ npm run test:watch       # run tests in watch mode
 
 The test suite covers the YAML parser, validator, Google Forms API mapping, OAuth flow, deployment tracking, and CLI commands.
 
+### Use as a library
+
+Besides the CLI, the package exports its core so another app can create quizzes in-process. You supply the authorized `OAuth2Client` (the CLI's browser flow is not used here):
+
+```ts
+import { createGoogleFormFromQuiz, validateQuizForm } from "google-forms-quiz-tool"
+
+const quiz = validateQuizForm(myQuizObject)
+const { formId, responderUri } = await createGoogleFormFromQuiz(quiz, {
+  auth,
+  folderId,
+})
+```
+
+`auth` is any authenticated `google-auth-library` `OAuth2Client` (e.g. built from a stored refresh token). Only the auth-agnostic core is exported — the interactive CLI auth and local deployment tracking are not.
+
 ---
 
 ## Limitations

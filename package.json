@@ -1,14 +1,25 @@
 {
   "name": "google-forms-quiz-tool",
-  "version": "1.0.0",
-  "description": "CLI tool to round-trip Google Forms quizzes to and from a simple text format.",
+  "version": "1.1.0",
+  "description": "Round-trip Google Forms quizzes to and from a simple text format — usable as a CLI and as an importable library.",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "bin": {
     "quiz-tool": "dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
     "dev": "tsx src/cli.ts",
     "lint": "eslint .",
     "start": "node dist/cli.js",

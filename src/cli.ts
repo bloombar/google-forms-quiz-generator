@@ -13,6 +13,7 @@ import {
   writeQuizFile,
 } from "./lib/quiz-file.js";
 import { trackDeployment } from "./lib/deployments.js";
+import { getAuthorizedClient } from "./lib/google-auth.js";
 
 dotenv.config();
 
@@ -54,7 +55,8 @@ async function run(): Promise<void> {
             describe: "Path to write the downloaded YAML file.",
           }),
       async (argv) => {
-        const quiz = await downloadFormAsQuizFile(argv["form-id"]);
+        const auth = await getAuthorizedClient();
+        const quiz = await downloadFormAsQuizFile(argv["form-id"], { auth });
         await writeQuizFile(argv.output, quiz);
         console.log(`Quiz downloaded and saved to ${argv.output}`);
       },
@@ -78,7 +80,9 @@ async function run(): Promise<void> {
           }),
       async (argv) => {
         const quiz = await readQuizFile(argv.input);
+        const auth = await getAuthorizedClient();
         const result = await createGoogleFormFromQuiz(quiz, {
+          auth,
           folderId: argv["folder-id"],
         });
         const deploymentsPath = await trackDeployment({
@@ -114,7 +118,10 @@ async function run(): Promise<void> {
           }),
       async (argv) => {
         const quiz = await readQuizFile(argv.input);
-        const result = await updateGoogleFormFromQuiz(argv["form-id"], quiz);
+        const auth = await getAuthorizedClient();
+        const result = await updateGoogleFormFromQuiz(argv["form-id"], quiz, {
+          auth,
+        });
         console.log(`Updated form ID: ${result.formId}`);
         if (result.responderUri) {
           console.log(`Responder URL: ${result.responderUri}`);
